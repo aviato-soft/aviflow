@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AviFlow - ES Module Example</title>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            margin: 40px;
+            background: #f9f9f9;
+            color: #333;
+        }
+
+        button {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .box {
+            margin-top: 20px;
+            padding: 15px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            min-height: 50px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>AviFlow ES Module Demo</h1>
+
+    <button data-action="fetch" data-url="https://jsonplaceholder.typicode.com/posts" data-method="POST"
+        data-body='{"title": "Hello AviFlow", "body": "Automated network actions."}' data-target="#post-result">
+        Create Post Record (POST)
+    </button>
+
+    <div id="post-result" class="box">Server response payload will render here...</div>
+
+    <script type="module" src="./app.js"></script>
+</body>
+
+</html>

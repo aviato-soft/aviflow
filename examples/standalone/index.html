@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AviFlow - Standalone Example</title>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            margin: 40px;
+            background: #f9f9f9;
+            color: #333;
+        }
+
+        button,
+        a {
+            background: #0076ff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .box {
+            margin-top: 20px;
+            padding: 15px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            min-height: 50px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>AviFlow Standalone Demo</h1>
+    <p>Testing event delegation and automated data-attribute fetch parsing.</p>
+
+    <button data-action="fetch" data-url="https://jsonplaceholder.typicode.com/users/1" data-target="#user-profile">
+        Load User Profile (GET)
+    </button>
+
+    <div id="user-profile" class="box">User profile information will load here...</div>
+
+    <script src="../../dist/aviflow.min.js"></script>
+    <script>
+        // Initialize once the DOM is fully interactive
+        document.addEventListener('DOMContentLoaded', () => {
+            new AviFlow();
+        });
+    </script>
+</body>
+
+</html>

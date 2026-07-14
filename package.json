@@ -1,0 +1,43 @@
+{
+  "name": "aviflow",
+  "version": "1.0.0",
+  "description": "A lightweight, dependency-free JavaScript utility to automate fetch requests using native HTML data-attributes.",
+  "type": "module",
+  "main": "./dist/aviflow.min.js",
+  "module": "./dist/aviflow.js",
+  "exports": {
+    ".": {
+      "import": "./dist/aviflow.js",
+      "require": "./dist/aviflow.min.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build:modern": "esbuild src/index.js --bundle --format=esm --outfile=dist/aviflow.js",
+    "build:standalone": "esbuild src/index.js --bundle --minify --format=iife --global-name=AviFlow --footer:js=\"if(typeof AviFlow!=='undefined'&&AviFlow.default)AviFlow=AviFlow.default;\" --outfile=dist/aviflow.min.js",
+    "build": "npm run build:modern && npm run build:standalone",
+    "watch": "esbuild src/index.js --bundle --watch --outfile=dist/aviflow.js",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage"
+  },
+  "jest": {
+    "testEnvironment": "jsdom"
+  },
+  "keywords": [
+    "fetch",
+    "ajax",
+    "automation",
+    "data-attributes",
+    "htmx-alternative",
+    "lightweight"
+  ],
+  "author": "Aviato Soft",
+  "license": "Apache 2.0",
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "jest": "^30.4.2",
+    "jest-environment-jsdom": "^30.4.1"
+  }
+}
