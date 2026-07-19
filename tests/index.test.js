@@ -1,9 +1,19 @@
 // tests/index.test.js
-import { jest } from '@jest/globals';
+import { expect, jest } from '@jest/globals';
 import AviFlow from '../src/index.js';
 
 describe('AviFlow Test Unit', () => {
     let mockFetch;
+
+    const expectedResponse = {
+        bool: true,
+        json: { 
+            status: 'success', 
+            data: {
+                message: 'Success API Response'
+            }},
+        text: '<span>Success API Response</span>',
+    }
 
     beforeEach(() => {
         // Reset the DOM body for each test
@@ -12,9 +22,9 @@ describe('AviFlow Test Unit', () => {
         // Mock global fetch with a successful response
         mockFetch = jest.fn(() =>
             Promise.resolve({
-                ok: true,
-                text: () => Promise.resolve('<span>Success API Response</span>'),
-                json: () => Promise.resolve({ status: 'ok' }),
+                ok: expectedResponse.bool,
+                text: () => Promise.resolve(expectedResponse.text),
+                json: () => Promise.resolve(expectedResponse.json),
             })
         );
         global.fetch = mockFetch;
@@ -48,43 +58,52 @@ describe('AviFlow Test Unit', () => {
 
         // 5. Assert HTML injection into target container worked flawlessly
         const output = document.getElementById('output');
-        expect(output.innerHTML).toBe('<span>Success API Response</span>');
+        expect(output.innerHTML).toBe(expectedResponse.text);
     });
 
 
     //TEST 2:
      test('should fall back to href attribute if data-url is missing on anchor tags', async () => {
+        // 1. Set up a mock DOM container and trigger element
         document.body.innerHTML = `
       <a id="link" data-action="fetch" href="/api/fallback-url" data-target="#output">Link</a>
       <div id="output"></div>
     `;
-
+        // 2. Initialize AviFlow
         new AviFlow();
 
+        // 3. Simulate a user click on the trigger button
         const link = document.getElementById('link');
         link.click();
 
+        // 4. Assert fetch was invoked with correct parameters
         expect(mockFetch).toHaveBeenCalledWith('/api/fallback-url', expect.any(Object));
     });
 
 
-    //TEST 3:
+    //TEST 3 - form data:
     test('should pass custom HTTP methods and bodies cleanly', async () => {
         document.body.innerHTML = `
       <button id="post-trigger"
         data-action="fetch"
         data-url="/api/submit"
         data-method="POST"
-        data-body-item="test"
-        data-body-test="action">
+        data-param-item="test"
+        data-param-test="action">
       </button>
     `;
 
-        new AviFlow();
+        let aviflow = new AviFlow();
+        const result = aviflow.formData(document.body.innerHtml);
+        
+        expect(result).toContain({
+            item: "test",
+            test: "action"
+        });
 
-        document.getElementById('post-trigger').click();
+        //document.getElementById('post-trigger').click();
 
-        expect(mockFetch).toHaveBeenCalledWith('/api/submit', expect.any({}));
+        expect(mockFetch).toHaveBeenCalledWith('/api/submit', expect.any(Object));
     });
 });
 
