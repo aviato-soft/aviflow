@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fetch API Mock Test</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 0 20px;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+        button {
+            background-color: #0070f3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background-color: #0051a8;
+        }
+        pre {
+            background-color: #f0f0f0;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            overflow-x: auto;
+            min-height: 50px;
+        }
+        .status {
+            font-weight: bold;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Fetch API Local Tester</h1>
+    <p>Click the button below to simulate fetching JSON data without a backend server.</p>
+    
+    <button id="fetchBtn">Trigger Fetch Request</button>
+
+    <div class="status">Status: <span id="statusText">Idle</span></div>
+    
+    <h3>Response Output:</h3>
+    <pre><code id="output">// JSON result will appear here...</code></pre>
+
+    <script>
+        // 1. Define the mock JSON data you want to "return"
+        const mockData = {
+            success: true,
+            message: "Hello from your local fetch test!",
+            timestamp: new Date().toISOString(),
+            user: {
+                id: 42,
+                name: "Alex Coder",
+                roles: ["admin", "developer"]
+            }
+        };
+
+        // 2. Convert the object to a Data URL string with a JSON mime-type
+        const jsonString = JSON.stringify(mockData);
+        const mockEndpoint = `data:application/json;charset=utf-8,${encodeURIComponent(jsonString)}`;
+
+        // 3. Set up the click event to perform the fetch
+        document.getElementById('fetchBtn').addEventListener('click', async () => {
+            const outputEl = document.getElementById('output');
+            const statusEl = document.getElementById('statusText');
+            
+            statusEl.textContent = "Fetching...";
+            outputEl.textContent = "Loading data...";
+
+            try {
+                // Fetching the local Data URL acts exactly like a real HTTP network request
+                const response = await fetch(mockEndpoint);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                // Update UI with formatted JSON
+                statusEl.textContent = `Success (${response.status || 'Data URL'})`;
+                statusEl.style.color = "green";
+                outputEl.textContent = JSON.stringify(data, null, 2);
+                
+            } catch (error) {
+                statusEl.textContent = "Error";
+                statusEl.style.color = "red";
+                outputEl.textContent = `Fetch failed: ${error.message}`;
+            }
+        });
+    </script>
+</body>
+</html>

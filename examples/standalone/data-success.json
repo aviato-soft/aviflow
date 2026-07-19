@@ -1,0 +1,15 @@
+{
+    "succes": true,
+    "html": "<p class=\"success\">Great, the response is okay!</p>",
+    "message": "Call executed okay!",
+    "timestamp": "2013-09-11T12:13.001",
+    "data": [{
+            "id": 1,
+            "name": "Aviato Soft"
+        },
+        {
+            "id": 2,
+            "name": "Vasile Giorgi"
+        }
+    ]
+}

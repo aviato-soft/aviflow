@@ -4,54 +4,183 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AviFlow - Standalone Example</title>
-    <style>
-        body {
-            font-family: system-ui, sans-serif;
-            margin: 40px;
-            background: #f9f9f9;
-            color: #333;
-        }
-
-        button,
-        a {
-            background: #0076ff;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            text-decoration: none;
-            display: inline-block;
-            cursor: pointer;
-        }
-
-        .box {
-            margin-top: 20px;
-            padding: 15px;
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            min-height: 50px;
-        }
-    </style>
+    <title>AviFlow - Standalone Examples</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
+    <div class="header">
+        <h1>&#x1F525; AviFlow Standalone Examples</h1>
+        <p class="subtitle">Interactive test cases demonstrating every data-attribute supported by the library. <br>Each
+            card is self-contained and can be copied as a new case.</p>
 
-    <h1>AviFlow Standalone Demo</h1>
-    <p>Testing event delegation and automated data-attribute fetch parsing.</p>
+        <div class="header-right">
+            <button class="theme-toggle" title="Toggle dark mode">Sun | Moon</button>
+        </div>
+    </div>
 
-    <button data-action="fetch" data-url="https://jsonplaceholder.typicode.com/users/1" data-target="#user-profile">
-        Load User Profile (GET)
-    </button>
+    <div class="grid" 
+        data-role="grid" 
+        data-action="fetch" 
+        data-url="./cards.json"
+        data-success="renderCards">
+        <div class="card" data-template="true">
+            <h3>${item.title}</h3>
+            <div class="trigger-wrap">
+                <div class="action">${item.action}</div>
+                <pre><code>${item.code}</code></pre>
+            </div>
+            <div class="box" id="${item.targetId}">Waiting for request&hellip;</div>
+            <div class="usage-note">${item.usageNote}</div>
+        </div>
+    </div>
 
-    <div id="user-profile" class="box">User profile information will load here...</div>
-
-    <script src="../../dist/aviflow.min.js"></script>
+    <!-- Document content generator script -->
     <script>
-        // Initialize once the DOM is fully interactive
+        const data = [
+            {
+                title: "Simple usage",
+                action: `<button 
+    data-action="fetch" 
+    data-url="https://jsonplaceholder.typicode.com/posts" 
+    data-target="#target-simple"
+    data-param-title="foo"
+    data-param-body="bar"
+    >Click to Fetch</button>`,
+                targetId: "target-simple",
+                usageNote: `The way it is used most of the time. <br>
+                Mandatory: <strong>data-action=fetch</strong>.<br>
+                Usual <strong>data-url</strong> and <strong>data-param-*</strong> is provided.`
+            },
+            {
+                title: "Anchor Trigger as Button",
+                action: `<a 
+    data-action="fetch" 
+    href="https://jsonplaceholder.typicode.com/posts"
+    data-target="#target-anchor"
+    data-param-title="foo"
+    data-param-body="bar"
+    >Fetch via Anchor</a>`,
+                targetId: "target-anchor",
+                usageNote: `Similar with <strong>Simple Example</strong>, but using <stong>a</strong> tag for trigger instead of a button.<br>Using href for anchor elements will made obsolete data-url.`
+            },
+            {
+                title: "Minimalist",
+                action: '<button data-action="fetch">Click to Fetch</button>',
+                targetId: "target-minimalist",
+                usageNote: "Minimal mandatory attribute <strong>data-action=fetch</strong>"
+            },
+/* --- WIP ---
+            {
+                title: "Multiple Params",
+                action: `<button 
+    data-action="fetch" 
+    data-method="GET" 
+    data-url="https://jsonplaceholder.typicode.com/users?_id={{userId}}" 
+    data-param-userId="1">GET User #1 (Button)</button>`,
+                targetId: "case03-target",
+                usageNote: "Multiple <strong>data-param-</strong> attributes collected into FormData. Also demonstrates <strong>data-method=GET</strong> with a custom URL template."
+            },
+            {
+                title: "Multiple Targets",
+                action: `<button 
+    data-action="fetch" 
+    data-url="https://jsonplaceholder.typicode.com/users/1" 
+    data-target="#case04-target-1">Render User Profile</button>`,
+                targetId: 'case04-target',
+        //      targetIds: ["case04-target-1", "case04-target-2"],
+                usageNote: "Each trigger has its own <strong>data-target=\"#...\"</strong> pointing to a different container. One click handles two independent fetches."
+            },
+            {
+                title: "All Parameters Used",
+                action: `<button 
+    data-action="fetch" 
+    data-url="https://jsonplaceholder.typicode.com/users/1" 
+    data-method="POST" 
+    data-param-ajax="true" 
+    data-param-testing-params="This is test param 1" 
+    data-param-testingParams="Test param 2" 
+    data-param-x="1" 
+    data-param-y="2" 
+    data-param-z="3" 
+    data-state-pending="Fetching..." 
+    data-on-success="avi.onSuccess" 
+    data-on-error="avi.onError" 
+    data-target="#case05-target"
+    >POST with Params &amp; Callbacks</button>`,
+                targetId: "case05-target",
+                usageNote: "Demonstrates every supported attribute: <strong>data-action</strong>, <strong>data-url</strong>, <strong>data-method</strong>, multiple <strong>data-param-</strong>,<br /><strong>data-state-pending</strong>, and custom callbacks <strong>data-on-success</strong> / <strong>data-on-error</strong>."
+            }
+*/
+        ];
+    const renderCards = function(data) {
         document.addEventListener('DOMContentLoaded', () => {
-            new AviFlow();
+            // Loop through the data array, clone template card and fill in values
+            const grid = document.querySelector('[data-role=grid]');
+            const tplCard = grid.querySelector('[data-template=true]');
+
+            const template = tplCard.outerHTML.replace('data-template="true"', '');
+            tplCard.remove();
+
+            // Compile the HTML template string into a dynamic template literal function
+            const renderCard = new Function('item', 'return `' + template + '`;');
+
+            data.forEach(item => {
+                // Escape the HTML code snippet so it renders as text in the code tag
+                const safeItem = {
+                    ...item,
+                    code: item.action.replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                };
+                const html = renderCard(safeItem);
+                grid.insertAdjacentHTML('beforeend', html);
+            });
+        });
+    };
+//TODO: move data to data-cards.json and replace this call with avi.fetch(gridElement)
+    renderCards(data);
+
+    </script>
+
+    <!-- Theme toggle script -->
+    <script>
+        (function () {
+            var $toggle = document.querySelector('.theme-toggle');
+            if (!$toggle) return;
+
+            // Read stored preference, otherwise follow system preference
+            var stored = localStorage.getItem('avi-flow-theme') || null;
+            var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            $toggle.textContent = (stored === 'dark' || (!stored && prefersDark)) ? 'Sun' : 'Moon';
+
+            // Toggle on click
+            function applyTheme() {
+                if (document.documentElement.getAttribute('data-theme') === 'dark') {
+                    document.documentElement.setAttribute('data-theme', '');
+                    localStorage.setItem('avi-flow-theme', 'light');
+                } else {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                    localStorage.setItem('avi-flow-theme', 'dark');
+                }
+            }
+
+            $toggle.addEventListener('click', applyTheme);
+        })();
+    </script>
+
+    <!-- Library script -->
+    <script src="../../src/index.js"></script>
+
+    <!-- App logic: callbacks + initialization -->
+    <script>
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const avi = new AviFlow();
+
+            // Custom callback shared across cases
+            avi.onSuccess = (data) => { console.log('[OK]', data); };
+            avi.onError = (error) => { console.error('[ERR]', error); };
+
+
         });
     </script>
 </body>
