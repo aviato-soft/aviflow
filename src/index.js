@@ -44,7 +44,7 @@ class AviFlow {
     this.options = {
       selector: '[data-action="fetch"]',
       onSuccess: (data, element) => this.defaultSuccess(data, element),
-      onError: (error, element) => this.defaultError(error, element),
+      onError: (data, element, error) => this.defaultError(data, element, error),
       ...options
     };
 
@@ -175,13 +175,28 @@ class AviFlow {
 
 
   /**
-   * Main event handler invoked after a matching element is clicked.
+   * Execute target.flow on element success
+   * @param {} element 
+   * WIP
+   *  data-target
+   *  data-success
+   *  data-error
+   */
+  async flow(element) {
+    console.log('fow was called on element');
+    console.log(element);
+  }
+
+
+  
+  /**
+   * Fetch event handler invoked after a matching element is clicked.
    * Extracts URL, HTTP method and `data-target` selector from the element's data-attributes,
    * collects form data via {@linkcode AviFlow.tools#formData}, performs the fetch request,
    * updates the DOM (if a target container was specified) and dispatches success/error callbacks.
    */
   async handleFetch(element) {
-    // Extract configurations from data attributes
+    let data = null;
     let url = element.dataset.url || element.getAttribute('href') || AviFlow.DEFAULT_URL;
     const method = (element.dataset.method || AviFlow.DEFAULT_METHOD).toUpperCase();
     const targetSelector = element.dataset.target || false;
@@ -197,8 +212,7 @@ class AviFlow {
 
       const options = {
         headers: headers,
-        method: method,
-        mode: "no-cors"
+        method: method
       };
 
       if (method === 'POST' || method === 'PUT') {
@@ -209,13 +223,12 @@ class AviFlow {
 
       const response = await fetch(url, options);
 
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
       // Handle response depending on content-type header
       const contentType = response.headers ? response.headers.get('content-type') : null;
-      console.log(response.headers.get('content-type'));
-      
-      let data;
       
       if (contentType && contentType.includes('application/json')) {
         data = await response.json();
@@ -230,8 +243,9 @@ class AviFlow {
           if (typeof data === 'object') {
             if (data.html && typeof data.html === 'string') {
               targetContainer.innerHTML = data.html;
+            } else {
+              targetContainer.textContent = JSON.stringify(data);  
             }
-            targetContainer.textContent = JSON.stringify(data);  
           } else {
             targetContainer.innerHTML = data;
           }
@@ -242,10 +256,12 @@ class AviFlow {
       this.options.onSuccess(data, element);
 
     } catch (error) {
-      this.options.onError(error, element);
+      this.options.onError(data, element, error);
     } finally {
  //   this.setLoadingState(element, false, originalContent);
     }
+
+    return data;
   }
 
 
@@ -331,8 +347,8 @@ class AviFlow {
     element.dispatchEvent(new CustomEvent('aviflow:success', { detail: data, bubbles: true }));
   }
 
-  defaultError(error, element) {
-    console.error('AviFlow error:', error);
+  defaultError(data, element, error) {
+    console.error({element, error, data});
     element.dispatchEvent(new CustomEvent('aviflow:error', { detail: error, bubbles: true }));
   }
 }
