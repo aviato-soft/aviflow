@@ -43,10 +43,15 @@ class AviFlow {
     // Default configurations
     this.options = {
       selector: '[data-action="fetch"]',
-      onSuccess: (data, element) => this.defaultSuccess(data, element),
-      onError: (data, element, error) => this.defaultError(data, element, error),
+//      onSuccess: (data, element) => this.defaultSuccess(data, element),
+//      onError: (data, element, error) => this.defaultError(data, element, error),
       ...options
     };
+
+    this.on = {
+      success: (data, element) => this.defaultSuccess(data, element),
+      error: (data, element, error) => this.defaultError(data, element, error),
+    }
 
     this.init();
   }
@@ -253,10 +258,10 @@ class AviFlow {
       }
 
       // Trigger custom or default success callback
-      this.options.onSuccess(data, element);
+      this.on.success(data, element);
 
     } catch (error) {
-      this.options.onError(data, element, error);
+      this.on.error(data, element, error);
     } finally {
  //   this.setLoadingState(element, false, originalContent);
     }
