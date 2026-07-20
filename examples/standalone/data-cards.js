@@ -39,14 +39,25 @@ const dataCards = [
     <li><strong>data-action=url</strong> - in this case we use a test string to get a result. If missing default value  <strong>#</strong> is used</li>`
     },
     {
-        title: "Events handler: Success",
+        title: "Events handler: Success (function)",
         action: `<button 
     data-action="fetch"
     data-on-success="alert('it works!')"
-    data-target="#target-event"
-    data-url='data:application/json;charset=utf-8,{"success":true,"html":"<p>okay!</p>"}'
+    data-target="#target-event-success-fn"
+    data-url='data:application/json;charset=utf-8,{"success":true,"html":"okay!"}'
     >Click to Fetch</button>`,
-        targetId: "target-event",
+        targetId: "target-event-success-fn",
+        usageNote: ''
+    },
+    {
+        title: "Events handler: Success (call)",
+        action: `<button 
+    data-action="fetch"
+    data-on-success="aviFnSuccess"
+    data-target="#target-event-success-call"
+    data-url='data:application/json;charset=utf-8,{"success":true,"html":"okay!"}'
+    >Click to Fetch</button>`,
+        targetId: "target-event-success-call",
         usageNote: ''
     }
 /*

@@ -7,7 +7,8 @@
     --text-primary: #1f2937;
     --text-secondary: #6b7280;
     --border-color: #e5e7eb;
-}
+    --pending: #c9c966;
+    }
 
 [data-theme="dark"] {
     /* Dark theme */
@@ -176,6 +177,11 @@ body {
 .card .action a:hover {
     background: var(--primary-dark);
     transform: translateY(-1px);
+}
+
+.card .action button.pending,
+.card .action a.pending {
+    background: var(--pending);
 }
 
 [data-template].card .action{

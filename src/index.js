@@ -35,16 +35,14 @@
  *  function to be called on success
  */
 class AviFlow {
-  static DEFAULT_METHOD = 'POST';
-  static DEFAULT_URL = '#';
-  static DEFAULT_PENDING_CLASS = 'pending';
 
   constructor(options = {}) {
     // Default configurations
     this.options = {
       selector: '[data-action="fetch"]',
-//      onSuccess: (data, element) => this.defaultSuccess(data, element),
-//      onError: (data, element, error) => this.defaultError(data, element, error),
+      url: '#',
+      method: 'POST',
+      pendingClass: 'pending',
       ...options
     };
 
@@ -55,6 +53,7 @@ class AviFlow {
 
     this.init();
   }
+  
 
   /**
    * Initializes the event listener on the document body (Event Delegation)
@@ -63,11 +62,11 @@ class AviFlow {
   init() {
     document.body.addEventListener('click', async (event) => {
       // Find closest element matching selector (handles nested icons/spans inside a button)
-      const targetElement = event.target.closest(this.options.selector);
-      
-      if (targetElement) {
+      const triggerElement = event.target.closest(this.options.selector);
+
+      if (triggerElement) {
         event.preventDefault();
-        await this.handleFetch(targetElement);
+        await this.handleFetch(triggerElement);
       }
     });
   }
@@ -85,10 +84,10 @@ class AviFlow {
      * @param {string}       prefix   Optional attribute name prefix. Defaults to `''` (all attributes).
      * @returns {Array<[string, string]>} Array of `[attributeNameWithoutPrefix, value]` pairs.
      */
-    filterAttributes: function(element, prefix = '') {
+    filterAttributes: function (element, prefix = '') {
       return Array.from(element.attributes)
-          .filter((attr) => attr.name.startsWith(prefix))
-          .map(({ name, value }) => [name.slice(prefix.length), value]);
+        .filter((attr) => attr.name.startsWith(prefix))
+        .map(({ name, value }) => [name.slice(prefix.length), value]);
     },
 
     /**
@@ -98,10 +97,10 @@ class AviFlow {
      * @param {string}       prefix   Optional key prefix. Defaults to `''` (all keys).
      * @returns {Array<[string, string]>} Array of `[keyWithoutPrefix, value]` pairs.
      */
-    filterDataset: function(element, prefix = '') {
+    filterDataset: function (element, prefix = '') {
       return Object.entries(element.dataset)
-          .filter(([key]) => key.startsWith(prefix))
-          .map(([key, value]) => [key.slice(prefix.length), value]);
+        .filter(([key]) => key.startsWith(prefix))
+        .map(([key, value]) => [key.slice(prefix.length), value]);
     },
 
 
@@ -116,10 +115,10 @@ class AviFlow {
      * @returns {Object.<string, string>} Object with `[keyWithoutPrefix]: value` entries.
      */
     formEntries: function (element, prefix = '', use = 'dataset') {
-      return Object.fromEntries((use === 'dataset') ? 
+      return Object.fromEntries((use === 'dataset') ?
         this.filterDataset(element, prefix) :
         this.filterAttributes(element, prefix)
-      )
+      );
     },
 
 
@@ -131,7 +130,7 @@ class AviFlow {
     formData: function (element, prefix = 'param') {
       const data = new FormData();
       const formEntries = this.formEntries(element, prefix);
-      
+
       if (!formEntries) {
         return data;
       }
@@ -150,7 +149,7 @@ class AviFlow {
     },
 
 
-    isEmptyObject: function(o) {
+    isEmptyObject: function (o) {
       //is this an object ?
       if (!o || typeof o !== 'object') {
         return false;
@@ -166,13 +165,13 @@ class AviFlow {
     },
 
 
-    toCamelCase: function(str) {
+    toCamelCase: function (str) {
       if (typeof str !== 'string') {
         return '';
       }
 
       return str
-        .trim()      
+        .trim()
         .toLowerCase()
         .replace(/[-_\s]+(.)?/g, (match, letter) => letter ? letter.toUpperCase() : '');
     }
@@ -186,14 +185,14 @@ class AviFlow {
    *  data-target
    *  data-success
    *  data-error
-   */
+   * /
   async flow(element) {
     console.log('fow was called on element');
     console.log(element);
   }
 
 
-  
+
   /**
    * Fetch event handler invoked after a matching element is clicked.
    * Extracts URL, HTTP method and `data-target` selector from the element's data-attributes,
@@ -202,31 +201,31 @@ class AviFlow {
    */
   async handleFetch(element) {
     let data = null;
-    let url = element.dataset.url || element.getAttribute('href') || AviFlow.DEFAULT_URL;
-    const method = (element.dataset.method || AviFlow.DEFAULT_METHOD).toUpperCase();
+    let url = element.dataset.url || element.getAttribute('href') || this.options.url;
+    const method = (element.dataset.method || this.options.method).toUpperCase();
     const targetSelector = element.dataset.target || false;
-    
+
     // Optional: Disable element during loading state
-//  const originalContent = element.innerHTML;
-//  this.setLoadingState(element, true);
+    const originalContent = element.innerHTML;
+    this.setLoadingState(element, true);
 
     try {
       const headers = {
         'X-Requested-With': 'XMLHttpRequest',
-       };
+      };
 
-      const options = {
+      const fetchOptions = {
         headers: headers,
         method: method
       };
 
       if (method === 'POST' || method === 'PUT') {
-        options.body = this.tools.formData(element, 'param');
+        fetchOptions.body = this.tools.formData(element, 'param');
       } else {
-        options.headers['Content-Type'] = 'application/json; charset=UTF-8';
+        fetchOptions.headers['Content-Type'] = 'application/json; charset=UTF-8';
       }
 
-      const response = await fetch(url, options);
+      const response = await fetch(url, fetchOptions);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -234,7 +233,7 @@ class AviFlow {
 
       // Handle response depending on content-type header
       const contentType = response.headers ? response.headers.get('content-type') : null;
-      
+
       if (contentType && contentType.includes('application/json')) {
         data = await response.json();
       } else {
@@ -249,7 +248,7 @@ class AviFlow {
             if (data.html && typeof data.html === 'string') {
               targetContainer.innerHTML = data.html;
             } else {
-              targetContainer.textContent = JSON.stringify(data);  
+              targetContainer.textContent = JSON.stringify(data);
             }
           } else {
             targetContainer.innerHTML = data;
@@ -257,88 +256,90 @@ class AviFlow {
         }
       }
 
-      // Trigger custom or default success callback
-      this.on.success(data, element);
+      // If inline callback is present, execute it and ignore custom or default success callback
+      if (element.dataset.onSuccess) {
+        this.executeCallback(element, 'onSuccess', data, element);
+      } else {
+        this.on.success(data, element);
+      }
 
     } catch (error) {
-      this.on.error(data, element, error);
+      // If inline callback is present, execute it and ignore custom or default error callback
+      if (element.dataset.onError) {
+        this.executeCallback(element, 'onError', data, element, error);
+      } else {
+        this.on.error(data, element, error);
+      }
     } finally {
- //   this.setLoadingState(element, false, originalContent);
+      this.setLoadingState(element, false, originalContent);
     }
 
     return data;
   }
 
-
+  
   /**
-   * Updates an element's innerHTML and CSS classes according to its loading status.
-   * Adds/removes the pending class (custom or default `AviFlow.DEFAULT_PENDING_CLASS`)
-   * depending on whether the operation is in progress.
-   *
+   * Helper to execute dynamic callbacks defined in data-attributes (e.g. data-on-success, data-on-error)
+   * It checks if the string resolves to a function path in the window object (e.g., 'console.log')
+   * or evaluates the string as Javascript code.
+   * 
    * @param {HTMLElement} element
-   * @param {'pending'|'success'|'error'} status The current loading state to apply.
-   *
-  setElementInnerHtmlByStatus(element, status) {
-    const pendingClass = Object.prototype.hasOwnProperty.call(element.dataset, 'data-on-progress')
-      ? element.dataset['data-on-progress']
-      : AviFlow.DEFAULT_PENDING_CLASS;
+   * @param {string} attrName Dataset attribute name (camelCase, e.g. 'onSuccess')
+   * @param {...*} args Arguments to pass to the function/code evaluation
+   */
+  executeCallback(element, attrName, ...args) {
+    const callbackStr = element.dataset[attrName];
+    if (!callbackStr) return;
 
-    switch (status) {
-      case 'pending':
-        if (element.innerHTML.trim() === '') {
-          element.classList.add(pendingClass);
-          element.style.pointerEvents = 'none';
-          element.style.opacity = '0.6';
+    try {
+      // Check if it's a global function path (e.g. "avi.onSuccess" or "alert")
+      const parts = callbackStr.split('.');
+      let func = typeof window !== 'undefined' ? window : null;
+      for (const part of parts) {
+        if (func) {
+          func = func[part];
         }
-        break;
+      }
 
-      case 'success':
-        element.classList.remove(pendingClass);
-        element.innerHTML = '';
-        element.style.pointerEvents = '';
-        element.style.opacity = '';
-        break;
-
-      case 'error':
-        element.classList.remove(pendingClass);
-        element.innerHTML = '';
-        element.style.pointerEvents = '';
-        element.style.opacity = '';
-        break;
+      if (typeof func === 'function') {
+        func.apply(element, args);
+      } else {
+        // Otherwise, evaluate it as code. Pass arguments named after their purpose.
+        const fn = new Function('data', 'element', 'error', callbackStr);
+        fn.apply(element, args);
+      }
+    } catch (e) {
+      console.error(`Error executing AviFlow callback for ${attrName}:`, e);
     }
   }
 
-  /**
-   * Returns a copy of the given string with its first character upper-cased.
-   *
-   * @param {string} str The input string.
-   * @returns {string}
-   *
-  static capitalize(str) {
-    return str.charAt(0).toUpperCase() + str.slice(1);
-  }
 
   /**
-   * Manages the visual loading state of an element (pending class, pointer-events and opacity).
-   *
-   * Uses a custom CSS class from `element.dataset['data-on-progress']` if present,
-   * otherwise falls back to {@linkcode AviFlow.DEFAULT_PENDING_CLASS}.
-   *
-   * @param {HTMLElement} element
-   * @param {boolean} isLoading Whether the operation is in progress (`true`) or complete (`false`).
-   *
+  * Manages the visual loading state of an element (pending class, pointer-events and opacity).
+  *
+  * Uses a custom CSS class from `element.dataset['data-on-progress']` if present,
+  * otherwise falls back to {@linkcode this.options.pendingClass}.
+  *
+  * @param {HTMLElement} element
+  * @param {boolean} isLoading Whether the operation is in progress (`true`) or complete (`false`).
+  */
   setLoadingState(element, isLoading, originalContent = '') {
     const pendingClass = Object.prototype.hasOwnProperty.call(element.dataset, 'data-on-progress')
       ? element.dataset['data-on-progress']
-      : AviFlow.DEFAULT_PENDING_CLASS;
+      : this.options.pendingClass;
+
     if (isLoading) {
+      element.disabled = true;
+      element.setAttribute('disabled', '');
       element.classList.add(pendingClass);
       element.style.pointerEvents = 'none';
       element.style.opacity = '0.6';
     } else {
+      element.disabled = false;
+      element.removeAttribute('disabled');
       element.classList.remove(pendingClass);
       element.style.pointerEvents = '';
-      element.style.opacity = '';
+      element.style.opacity = ''
       element.innerHTML = originalContent;
     }
   }
@@ -353,7 +354,7 @@ class AviFlow {
   }
 
   defaultError(data, element, error) {
-    console.error({element, error, data});
+    console.error({ element, error, data });
     element.dispatchEvent(new CustomEvent('aviflow:error', { detail: error, bubbles: true }));
   }
 }
