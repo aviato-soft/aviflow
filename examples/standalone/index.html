@@ -22,7 +22,7 @@
     <div class="grid" 
         data-role="grid" 
         data-action="fetch" 
-        data-url="./cards.json"
+        data-url="./data-cards.json" 
         data-success="renderCards">
         <div class="card" data-template="true">
             <h3>${item.title}</h3>
@@ -37,107 +37,7 @@
 
     <!-- Document content generator script -->
     <script>
-        const data = [
-            {
-                title: "Simple usage",
-                action: `<button 
-    data-action="fetch" 
-    data-url="https://jsonplaceholder.typicode.com/posts" 
-    data-target="#target-simple"
-    data-param-title="foo"
-    data-param-body="bar"
-    >Click to Fetch</button>`,
-                targetId: "target-simple",
-                usageNote: `The way it is used most of the time. <br>
-                Mandatory: <strong>data-action=fetch</strong>.<br>
-                Usual <strong>data-url</strong> and <strong>data-param-*</strong> is provided.`
-            },
-            {
-                title: "Anchor Trigger as Button",
-                action: `<a 
-    data-action="fetch" 
-    href="https://jsonplaceholder.typicode.com/posts"
-    data-target="#target-anchor"
-    data-param-title="foo"
-    data-param-body="bar"
-    >Fetch via Anchor</a>`,
-                targetId: "target-anchor",
-                usageNote: `Similar with <strong>Simple Example</strong>, but using <stong>a</strong> tag for trigger instead of a button.<br>Using href for anchor elements will made obsolete data-url.`
-            },
-            {
-                title: "Minimalist",
-                action: '<button data-action="fetch">Click to Fetch</button>',
-                targetId: "target-minimalist",
-                usageNote: "Minimal mandatory attribute <strong>data-action=fetch</strong>"
-            },
-/* --- WIP ---
-            {
-                title: "Multiple Params",
-                action: `<button 
-    data-action="fetch" 
-    data-method="GET" 
-    data-url="https://jsonplaceholder.typicode.com/users?_id={{userId}}" 
-    data-param-userId="1">GET User #1 (Button)</button>`,
-                targetId: "case03-target",
-                usageNote: "Multiple <strong>data-param-</strong> attributes collected into FormData. Also demonstrates <strong>data-method=GET</strong> with a custom URL template."
-            },
-            {
-                title: "Multiple Targets",
-                action: `<button 
-    data-action="fetch" 
-    data-url="https://jsonplaceholder.typicode.com/users/1" 
-    data-target="#case04-target-1">Render User Profile</button>`,
-                targetId: 'case04-target',
-        //      targetIds: ["case04-target-1", "case04-target-2"],
-                usageNote: "Each trigger has its own <strong>data-target=\"#...\"</strong> pointing to a different container. One click handles two independent fetches."
-            },
-            {
-                title: "All Parameters Used",
-                action: `<button 
-    data-action="fetch" 
-    data-url="https://jsonplaceholder.typicode.com/users/1" 
-    data-method="POST" 
-    data-param-ajax="true" 
-    data-param-testing-params="This is test param 1" 
-    data-param-testingParams="Test param 2" 
-    data-param-x="1" 
-    data-param-y="2" 
-    data-param-z="3" 
-    data-state-pending="Fetching..." 
-    data-on-success="avi.onSuccess" 
-    data-on-error="avi.onError" 
-    data-target="#case05-target"
-    >POST with Params &amp; Callbacks</button>`,
-                targetId: "case05-target",
-                usageNote: "Demonstrates every supported attribute: <strong>data-action</strong>, <strong>data-url</strong>, <strong>data-method</strong>, multiple <strong>data-param-</strong>,<br /><strong>data-state-pending</strong>, and custom callbacks <strong>data-on-success</strong> / <strong>data-on-error</strong>."
-            }
-*/
-        ];
-    const renderCards = function(data) {
-        document.addEventListener('DOMContentLoaded', () => {
-            // Loop through the data array, clone template card and fill in values
-            const grid = document.querySelector('[data-role=grid]');
-            const tplCard = grid.querySelector('[data-template=true]');
-
-            const template = tplCard.outerHTML.replace('data-template="true"', '');
-            tplCard.remove();
-
-            // Compile the HTML template string into a dynamic template literal function
-            const renderCard = new Function('item', 'return `' + template + '`;');
-
-            data.forEach(item => {
-                // Escape the HTML code snippet so it renders as text in the code tag
-                const safeItem = {
-                    ...item,
-                    code: item.action.replace(/</g, '&lt;').replace(/>/g, '&gt;')
-                };
-                const html = renderCard(safeItem);
-                grid.insertAdjacentHTML('beforeend', html);
-            });
-        });
-    };
-//TODO: move data to data-cards.json and replace this call with avi.fetch(gridElement)
-    renderCards(data);
+        
 
     </script>
 
@@ -169,18 +69,40 @@
 
     <!-- Library script -->
     <script src="../../src/index.js"></script>
+    
+    <!-- Page data-->
+    <script src="./data-cards.js"></script>
 
     <!-- App logic: callbacks + initialization -->
     <script>
 
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             const avi = new AviFlow();
 
             // Custom callback shared across cases
             avi.onSuccess = (data) => { console.log('[OK]', data); };
             avi.onError = (error) => { console.error('[ERR]', error); };
 
+            // Data is now loaded from data-cards.json
 
+            //get the cards:
+            const grid = document.querySelector('[data-role=grid]');
+            const tplCard = grid.querySelector('[data-template=true]');
+            const template = tplCard.outerHTML.replace('data-template="true"', '');
+            tplCard.remove();
+
+            // Compile the HTML template string into a dynamic template literal function
+            const renderCard = new Function('item', 'return `' + template + '`;');
+
+            dataCards.forEach(item => {
+                // Escape the HTML code snippet so it renders as text in the code tag
+                const safeItem = {
+                    ...item,
+                    code: item.action.replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                };
+                const html = renderCard(safeItem);
+                grid.insertAdjacentHTML('beforeend', html);
+            });
         });
     </script>
 </body>

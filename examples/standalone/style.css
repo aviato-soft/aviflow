@@ -141,7 +141,7 @@ h1 {
 }
 
 .card .action {
-    flex: 0 0 calc(100% / 3);
+    flex: 0 0 calc(100% / 4);
 }
 
 .card .action button,
