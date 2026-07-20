@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 
 <head>
     <meta charset="UTF-8">
@@ -9,21 +9,18 @@
 </head>
 
 <body>
-    <div class="header">
-        <h1>&#x1F525; AviFlow Standalone Examples</h1>
-        <p class="subtitle">Interactive test cases demonstrating every data-attribute supported by the library. <br>Each
-            card is self-contained and can be copied as a new case.</p>
-
-        <div class="header-right">
-            <button class="theme-toggle" title="Toggle dark mode">Sun | Moon</button>
+    <header>
+        <button class="theme-toggle" aria-label="Toggle dark mode">
+            <span class="icon-sun"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+            <span class="icon-moon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"/></svg></span>
+        </button>
+        <div class="header-wrapper">
+            <h1>&#x1F525; AviFlow Standalone Examples</h1>
+            <p class="subtitle">Interactive test cases demonstrating every data-attribute supported by the library. <br>Each card is self-contained and can be copied as a new case.</p>
         </div>
-    </div>
+    </header>
 
-    <div class="grid" 
-        data-role="grid" 
-        data-action="fetch" 
-        data-url="./data-cards.json" 
-        data-success="renderCards">
+    <div class="grid" data-role="grid">
         <div class="card" data-template="true">
             <h3>${item.title}</h3>
             <div class="trigger-wrap">
@@ -50,16 +47,25 @@
             // Read stored preference, otherwise follow system preference
             var stored = localStorage.getItem('avi-flow-theme') || null;
             var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-            $toggle.textContent = (stored === 'dark' || (!stored && prefersDark)) ? 'Sun' : 'Moon';
+            var isDark = (stored === 'dark' || (!stored && prefersDark));
+            $toggle.classList.toggle('active', isDark);
+
+            // Apply the correct theme attribute based on current state
+            if (isDark) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
 
             // Toggle on click
             function applyTheme() {
-                if (document.documentElement.getAttribute('data-theme') === 'dark') {
-                    document.documentElement.setAttribute('data-theme', '');
-                    localStorage.setItem('avi-flow-theme', 'light');
-                } else {
+                isDark = !isDark;
+                if (isDark) {
                     document.documentElement.setAttribute('data-theme', 'dark');
                     localStorage.setItem('avi-flow-theme', 'dark');
+                } else {
+                    document.documentElement.setAttribute('data-theme', 'light');
+                    localStorage.setItem('avi-flow-theme', 'light');
                 }
             }
 
@@ -79,9 +85,9 @@
         document.addEventListener('DOMContentLoaded', async () => {
             const avi = new AviFlow();
 
-            // Custom callback shared across cases
-            avi.onSuccess = (data) => { console.log('[OK]', data); };
-            avi.onError = (error) => { console.error('[ERR]', error); };
+            // Custom callback shared across cases — must be on options, not the instance directly
+            avi.on.success = (data, element) => { console.log('[OK]', data, element); };
+            avi.on.error = (data, element, error) => { console.error('[ERR]', error); };
 
             // Data is now loaded from data-cards.json
 

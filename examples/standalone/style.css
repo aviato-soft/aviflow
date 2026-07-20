@@ -27,20 +27,14 @@ body {
     font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
     margin: 0;
     padding: 1.5rem;
+    position: relative
 }
 
 [data-theme="dark"] body {
     background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
 }
 
-
-h1 { 
-    font-size: 2rem; 
-    margin-bottom: .25rem; 
-    color: var(--text-primary); 
-}
-
-.header {
+.header-wrapper {
     margin: 0 auto 1.75rem;
     max-width: 960px;
     padding-top: .875rem;
@@ -48,17 +42,37 @@ h1 {
     text-align: center;
 }
 
+.header-wrapper h1 { 
+    font-size: 2rem;
+    color: var(--text-primary); 
+    margin: 0;
+}
+
 .theme-toggle {
     background: var(--bg-card);
     border: none;
     border-radius: .5rem;
+    box-shadow:
+        0 2px 6px rgba(0,0,0,.05),
+        0 8px 24px rgba(0,0,0,.07),
+        inset 0 0 0 .0625rem rgba(255, 255, 255, .3);
     color: #6b7280;
     cursor: pointer;
     padding: .375rem .625rem;
     position: absolute;
-    right: 0;
-    top: -.875rem;
+    right: 1.5rem;
+    top: 1.5rem;
 }
+
+.theme-toggle {
+    transition: transform 0.2s ease;
+}
+
+[data-theme="light"] .icon-sun,
+[data-theme="dark"] .icon-moon {
+    display: none;
+}
+
 
 .theme-toggle:hover {
     background: #f3f4f6;
@@ -68,17 +82,13 @@ h1 {
     background: #374151;
 }
 
-.header-right {
-    position: absolute;
-    right: 0;
-    top: 0;
+[data-theme="dark"] .theme-toggle:hover {
+    background: #374151;
 }
-
-
 
 .subtitle {
     color: var(--text-secondary);
-    font-size: 0.95rem;
+    font-size: 1rem;
     line-height: 1.5;
 }
 
@@ -103,6 +113,10 @@ h1 {
         0 8px 24px rgba(0,0,0,.07),
         inset 0 0 0 .0625rem rgba(255, 255, 255, .3);
     padding: 1.5rem 1.25rem;
+}
+
+[data-theme="dark"] .card .trigger-wrap pre{
+    background: #2d2d3a;
 }
 
 [data-theme="dark"] .card {
@@ -186,14 +200,19 @@ h1 {
     margin: 0;
     min-width: 0;
     overflow: hidden;
+    background: rgba(0, 0, 0, .05);
+    font-family: 'Fira Code', 'Cascadia Code', Consolas, 'Liberation Mono', Menlo, monospace;
+    border-radius: 0.5rem;
 }
 
 .card .trigger-wrap pre code{
-    font-size: larger;
+    display: block;
+    overflow: auto;
+    padding: 1rem;
 }
 
 [data-template].card .trigger-wrap pre{
-    color: var(--text-secondary);
+    color: #c9d1d9;
 }
 [data-template].card .trigger-wrap pre::after {
     background-color: var(--text-secondary);

@@ -38,6 +38,17 @@ const dataCards = [
     <li><strong>data-action=target</strong> - in this case used as working example, it is optional.Success handling function can do the default trarget job.</li>
     <li><strong>data-action=url</strong> - in this case we use a test string to get a result. If missing default value  <strong>#</strong> is used</li>`
     },
+    {
+        title: "Events handler: Success",
+        action: `<button 
+    data-action="fetch"
+    data-on-success="alert('it works!')"
+    data-target="#target-event"
+    data-url='data:application/json;charset=utf-8,{"success":true,"html":"<p>okay!</p>"}'
+    >Click to Fetch</button>`,
+        targetId: "target-event",
+        usageNote: ''
+    }
 /*
     {
         title: "Multiple Params",
