@@ -1,14 +1,16 @@
 // src/index.js
-var AviFlow = class _AviFlow {
-  static DEFAULT_METHOD = "POST";
-  static DEFAULT_URL = "/";
-  static DEFAULT_PENDING_CLASS = "pending";
+var AviFlow = class {
   constructor(options = {}) {
     this.options = {
       selector: '[data-action="fetch"]',
-      onSuccess: (data, element) => this.defaultSuccess(data, element),
-      onError: (error, element) => this.defaultError(error, element),
+      url: "#",
+      method: "POST",
+      pendingClass: "pending",
       ...options
+    };
+    this.on = {
+      success: (data, element) => this.defaultSuccess(data, element),
+      error: (data, element, error) => this.defaultError(data, element, error)
     };
     this.init();
   }
@@ -18,39 +20,151 @@ var AviFlow = class _AviFlow {
    */
   init() {
     document.body.addEventListener("click", async (event) => {
-      const targetElement = event.target.closest(this.options.selector);
-      if (targetElement) {
+      const triggerElement = event.target.closest(this.options.selector);
+      if (triggerElement) {
         event.preventDefault();
-        await this.handleFetch(targetElement);
+        await this.handleFetch(triggerElement);
       }
     });
   }
   /**
-   * Core fetch handler
+   * Integrated tools.
    */
+  tools = {
+    /**
+     * Filters attributes of an element that match a given prefix.
+     *
+     * @param {HTMLElement} element   The target element.
+     * @param {string}       prefix   Optional attribute name prefix. Defaults to `''` (all attributes).
+     * @param {boolean}      capitalizeKey Optional flag to capitalize key names. Defaults to `false`.
+     * @returns {Array<[string, string]>} Array of `[attributeNameWithoutPrefix, value]` pairs.
+     */
+    filterAttributes: function(element, prefix = "", capitalizeKey = false) {
+      return Array.from(element.attributes).filter((attr) => attr.name.startsWith(prefix)).map(({ name, value }) => {
+        let key = name.slice(prefix.length);
+        if (capitalizeKey) {
+          key = this.tools ? this.tools.toCapitalize(key) : this.toCapitalize(key);
+        }
+        return [key, value];
+      });
+    },
+    /**
+     * Filters dataset entries of an element that match a given prefix.
+     *
+     * @param {HTMLElement} element   The target element.
+     * @param {string}       prefix   Optional key prefix. Defaults to `''` (all keys).
+     * @returns {Array<[string, string]>} Array of `[keyWithoutPrefix, value]` pairs.
+     */
+    filterDataset: function(element, prefix = "") {
+      return Object.entries(element.dataset).filter(([key]) => key.startsWith(prefix)).map(([key, value]) => [key.slice(prefix.length), value]);
+    },
+    /**
+     * Builds an object from attributes or dataset entries that share a common prefix.
+     *
+     * Reads the element's `dataset` by default; pass `'attribute'` as the third argument to read HTML attributes instead.
+     *
+     * @param {HTMLElement} element The target element.
+     * @param {string}       [prefix = ''] Optional name prefix to match against (e.g. `body`, `data-body-param`).
+     * @param {'dataset'|'attributes'} [use='dataset'] Where to read data from: `'dataset'` or `'attribute'`.
+     * @returns {Object.<string, string>} Object with `[keyWithoutPrefix]: value` entries.
+     */
+    formEntries: function(element, prefix = "", use = "dataset") {
+      if (use === "dataset") {
+        return Object.fromEntries(this.filterDataset(element, prefix));
+      }
+      if (use === "attributes") {
+        if (prefix === "") {
+          return Object.fromEntries(this.filterAttributes(element, "data-", true));
+        } else {
+          return Object.fromEntries(this.filterAttributes(element, `data-${prefix}-`, true));
+        }
+      }
+      return {};
+    },
+    /**
+     * Call formEntries with 'param' default prefix
+     * @param {HTMLElement} element
+     * @returns {FormData}
+     */
+    formData: function(element, prefix = "param") {
+      const data = new FormData();
+      const formEntries = this.formEntries(element, prefix);
+      if (this.isEmptyObject(formEntries)) {
+        return data;
+      }
+      for (const [key, value] of Object.entries(formEntries)) {
+        if (value !== void 0 && value !== null) {
+          data.append(this.toCamelCase(key), value);
+        }
+      }
+      return data;
+    },
+    isEmptyObject: function(o) {
+      if (!o || typeof o !== "object") {
+        return false;
+      }
+      for (let _key in o) {
+        return false;
+      }
+      return o.constructor === Object;
+    },
+    toCamelCase: function(text) {
+      if (typeof text !== "string") {
+        return "";
+      }
+      return text.trim().toLowerCase().replace(/^[-_\s]+/, "").replace(/[-_\s]+(.)?/g, (_, letter) => letter ? letter.toUpperCase() : "");
+    },
+    toCapitalize: function(text) {
+      const trimText = text.trim().replace(/^[-_\s]+/, "");
+      return trimText.charAt(0).toUpperCase() + trimText.slice(1);
+    }
+  };
+  /**
+     * Execute target.flow on element success
+     * @param {} element 
+     * WIP
+     *  data-target
+     *  data-success
+     *  data-error
+     * /
+    async flow(element) {
+      console.log('fow was called on element');
+      console.log(element);
+    }
+  
+  
+  
+    /**
+     * Fetch event handler invoked after a matching element is clicked.
+     * Extracts URL, HTTP method and `data-target` selector from the element's data-attributes,
+     * collects form data via {@linkcode AviFlow.tools#formData}, performs the fetch request,
+     * updates the DOM (if a target container was specified) and dispatches success/error callbacks.
+     */
   async handleFetch(element) {
-    let url = element.dataset.url || element.getAttribute("href") || _AviFlow.DEFAULT_URL;
-    const method = element.dataset.method || _AviFlow.DEFAULT_METHOD;
-    const targetSelector = element.dataset.target;
+    let data = null;
+    let url = element.dataset.url || element.getAttribute("href") || this.options.url;
+    const method = (element.dataset.method || this.options.method).toUpperCase();
+    const targetSelector = element.dataset.target || false;
     const originalContent = element.innerHTML;
     this.setLoadingState(element, true);
     try {
       const headers = {
         "X-Requested-With": "XMLHttpRequest"
       };
-      const body = method !== "GET" ? element.dataset.body || this.formData(element) : null;
-      if (body && !(body instanceof FormData)) {
-        headers["Content-Type"] = "application/json";
-      }
-      const response = await fetch(url, {
-        method,
+      const fetchOptions = {
         headers,
-        // Pull payload from data-body attributes if it exists (expects JSON string)
-        body
-      });
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        method
+      };
+      if (method === "POST" || method === "PUT") {
+        fetchOptions.body = this.tools.formData(element, "param");
+      } else {
+        fetchOptions.headers["Content-Type"] = "application/json; charset=UTF-8";
+      }
+      const response = await fetch(url, fetchOptions);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const contentType = response.headers ? response.headers.get("content-type") : null;
-      let data;
       if (contentType && contentType.includes("application/json")) {
         data = await response.json();
       } else {
@@ -59,82 +173,83 @@ var AviFlow = class _AviFlow {
       if (targetSelector) {
         const targetContainer = document.querySelector(targetSelector);
         if (targetContainer) {
-          targetContainer.innerHTML = typeof data === "object" ? JSON.stringify(data) : data;
+          if (typeof data === "object") {
+            if (data.html && typeof data.html === "string") {
+              targetContainer.innerHTML = data.html;
+            } else {
+              targetContainer.textContent = JSON.stringify(data);
+            }
+          } else {
+            targetContainer.innerHTML = data;
+          }
         }
       }
-      this.options.onSuccess(data, element);
+      if (element.dataset.onSuccess) {
+        this.executeCallback(element, "onSuccess", data, element);
+      } else {
+        this.on.success(data, element);
+      }
     } catch (error) {
-      this.options.onError(error, element);
+      if (element.dataset.onError) {
+        this.executeCallback(element, "onError", data, element, error);
+      } else {
+        this.on.error(data, element, error);
+      }
     } finally {
       this.setLoadingState(element, false, originalContent);
     }
+    return data;
   }
   /**
-   * Collects all data-body-* attributes from the element into a FormData object.
-   * Keys are converted from kebab-case (e.g., `data-body-name`) to camelCase (`name`).
-   *
+   * Helper to execute dynamic callbacks defined in data-attributes (e.g. data-on-success, data-on-error)
+   * It checks if the string resolves to a function path in the window object (e.g., 'console.log')
+   * or evaluates the string as Javascript code.
+   * 
    * @param {HTMLElement} element
-   * @returns {FormData}
+   * @param {string} attrName Dataset attribute name (camelCase, e.g. 'onSuccess')
+   * @param {...*} args Arguments to pass to the function/code evaluation
    */
-  formData(element) {
-    const form = new FormData();
-    let hasEntries = false;
-    Array.from(element.attributes).forEach((attr) => {
-      if (attr.name.startsWith("data-body-")) {
-        const rest = attr.name.slice(10);
-        const camelKey = rest.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
-        form.append(camelKey, attr.value);
-        hasEntries = true;
-      }
-    });
-    return hasEntries ? form : null;
-  }
-  /**
-   * Sets innerHTML on an element based on its current status (pending, success, error).
-   *
-   * @param {HTMLElement} element
-   * @param {'pending'|'success'|'error'} status
-   */
-  setElementInnerHtmlByStatus(element, status) {
-    const pendingClass = Object.prototype.hasOwnProperty.call(element.dataset, "data-on-progress") ? element.dataset["data-on-progress"] : _AviFlow.DEFAULT_PENDING_CLASS;
-    switch (status) {
-      case "pending":
-        if (element.innerHTML.trim() === "") {
-          element.classList.add(pendingClass);
-          element.style.pointerEvents = "none";
-          element.style.opacity = "0.6";
+  executeCallback(element, attrName, ...args) {
+    const callbackStr = element.dataset[attrName];
+    if (!callbackStr) return;
+    try {
+      const parts = callbackStr.split(".");
+      let func = typeof window !== "undefined" ? window : null;
+      for (const part of parts) {
+        if (func) {
+          func = func[part];
         }
-        break;
-      case "success":
-        element.classList.remove(pendingClass);
-        element.innerHTML = "";
-        element.style.pointerEvents = "";
-        element.style.opacity = "";
-        break;
-      case "error":
-        element.classList.remove(pendingClass);
-        element.innerHTML = "";
-        element.style.pointerEvents = "";
-        element.style.opacity = "";
-        break;
+      }
+      if (typeof func === "function") {
+        func.apply(element, args);
+      } else {
+        const fn = new Function("data", "element", "error", callbackStr);
+        fn.apply(element, args);
+      }
+    } catch (e) {
+      console.error(`Error executing AviFlow callback for ${attrName}:`, e);
     }
   }
   /**
-   * Capitalize the first letter of a string.
-   */
-  static capitalize(str) {
-    return str.charAt(0).toUpperCase() + str.slice(1);
-  }
-  /**
-   * Visual indicator when an operation is pending
-   */
+  * Manages the visual loading state of an element (pending class, pointer-events and opacity).
+  *
+  * Uses a custom CSS class from `element.dataset['data-on-progress']` if present,
+  * otherwise falls back to {@linkcode this.options.pendingClass}.
+  *
+  * @param {HTMLElement} element
+  * @param {boolean} isLoading Whether the operation is in progress (`true`) or complete (`false`).
+  */
   setLoadingState(element, isLoading, originalContent = "") {
-    const pendingClass = Object.prototype.hasOwnProperty.call(element.dataset, "data-on-progress") ? element.dataset["data-on-progress"] : _AviFlow.DEFAULT_PENDING_CLASS;
+    const pendingClass = Object.prototype.hasOwnProperty.call(element.dataset, "data-on-progress") ? element.dataset["data-on-progress"] : this.options.pendingClass;
     if (isLoading) {
+      element.disabled = true;
+      element.setAttribute("disabled", "");
       element.classList.add(pendingClass);
       element.style.pointerEvents = "none";
       element.style.opacity = "0.6";
     } else {
+      element.disabled = false;
+      element.removeAttribute("disabled");
       element.classList.remove(pendingClass);
       element.style.pointerEvents = "";
       element.style.opacity = "";
@@ -146,11 +261,9 @@ var AviFlow = class _AviFlow {
    * so other parts of your app can listen cleanly.
    */
   defaultSuccess(data, element) {
-    console.log("AviFlow success:", data);
     element.dispatchEvent(new CustomEvent("aviflow:success", { detail: data, bubbles: true }));
   }
-  defaultError(error, element) {
-    console.error("AviFlow error:", error);
+  defaultError(data, element, error) {
     element.dispatchEvent(new CustomEvent("aviflow:error", { detail: error, bubbles: true }));
   }
 };

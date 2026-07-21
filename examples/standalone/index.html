@@ -87,11 +87,12 @@
 
             // Custom callback shared across cases — must be on options, not the instance directly
             avi.on.success = (data, element) => { console.log('[OK]', data, element); };
-            avi.on.error = (data, element, error) => { console.error('[ERR]', error); };
+            avi.on.error = (data, element, error) => { console.error('[ERR]', data, element, error); };
 
             aviFnSuccess = (data, element) => { 
-                    alert('it works fine!'); 
-                    console.log(data)};
+                alert('it works fine!'); 
+                console.log(data)
+            };
 
             // Data is now loaded from data-cards.json
 

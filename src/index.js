@@ -82,12 +82,19 @@ class AviFlow {
      *
      * @param {HTMLElement} element   The target element.
      * @param {string}       prefix   Optional attribute name prefix. Defaults to `''` (all attributes).
+     * @param {boolean}      capitalizeKey Optional flag to capitalize key names. Defaults to `false`.
      * @returns {Array<[string, string]>} Array of `[attributeNameWithoutPrefix, value]` pairs.
      */
-    filterAttributes: function (element, prefix = '') {
+    filterAttributes: function (element, prefix = '', capitalizeKey = false) {
       return Array.from(element.attributes)
         .filter((attr) => attr.name.startsWith(prefix))
-        .map(({ name, value }) => [name.slice(prefix.length), value]);
+        .map(({ name, value }) => {
+          let key = name.slice(prefix.length);
+          if (capitalizeKey) {
+            key = (this.tools ? this.tools.toCapitalize(key) : this.toCapitalize(key));
+          }
+          return [key, value];
+        });
     },
 
     /**
@@ -110,15 +117,24 @@ class AviFlow {
      * Reads the element's `dataset` by default; pass `'attribute'` as the third argument to read HTML attributes instead.
      *
      * @param {HTMLElement} element The target element.
-     * @param {string}       [prefix] Optional name prefix to match against (e.g. `body`, `data-body-param`).
-     * @param {'dataset'|'attribute'} [use='dataset'] Where to read data from: `'dataset'` or `'attribute'`.
+     * @param {string}       [prefix = ''] Optional name prefix to match against (e.g. `body`, `data-body-param`).
+     * @param {'dataset'|'attributes'} [use='dataset'] Where to read data from: `'dataset'` or `'attribute'`.
      * @returns {Object.<string, string>} Object with `[keyWithoutPrefix]: value` entries.
      */
     formEntries: function (element, prefix = '', use = 'dataset') {
-      return Object.fromEntries((use === 'dataset') ?
-        this.filterDataset(element, prefix) :
-        this.filterAttributes(element, prefix)
-      );
+      if (use === 'dataset') {
+        return Object.fromEntries(this.filterDataset(element, prefix));
+      }
+
+      if (use === 'attributes') {
+        if (prefix === '') {
+          return Object.fromEntries(this.filterAttributes(element, 'data-', true));
+        } else {
+          return Object.fromEntries(this.filterAttributes(element, `data-${prefix}-`, true));  
+        }
+      }
+
+      return {};
     },
 
 
@@ -130,10 +146,6 @@ class AviFlow {
     formData: function (element, prefix = 'param') {
       const data = new FormData();
       const formEntries = this.formEntries(element, prefix);
-
-      if (!formEntries) {
-        return data;
-      }
 
       if (this.isEmptyObject(formEntries)) {
         return data;
@@ -156,7 +168,7 @@ class AviFlow {
       }
 
       // Performance win: if it has any enumerable properties, it's not empty
-      for (const key in o) {
+      for (let _key in o) {
         return false;
       }
 
@@ -165,15 +177,24 @@ class AviFlow {
     },
 
 
-    toCamelCase: function (str) {
-      if (typeof str !== 'string') {
+    toCamelCase: function (text) {
+      if (typeof text !== 'string') {
         return '';
       }
 
-      return str
+      return text
         .trim()
         .toLowerCase()
-        .replace(/[-_\s]+(.)?/g, (match, letter) => letter ? letter.toUpperCase() : '');
+        .replace(/^[-_\s]+/, '')
+        .replace(/[-_\s]+(.)?/g, (_, letter) => (letter ? letter.toUpperCase() : ''));
+    },
+
+
+    toCapitalize: function(text) {
+      const trimText = text
+          .trim()
+          .replace(/^[-_\s]+/, '');
+      return trimText.charAt(0).toUpperCase() + trimText.slice(1);
     }
   }
 
@@ -354,7 +375,7 @@ class AviFlow {
   }
 
   defaultError(data, element, error) {
-    console.error({ element, error, data });
+    // console.error({ element, error, data });
     element.dispatchEvent(new CustomEvent('aviflow:error', { detail: error, bubbles: true }));
   }
 }
@@ -365,4 +386,4 @@ if (typeof window !== 'undefined') {
 }
 
 // ES Module export for bundlers and modern environments
-//export default AviFlow;
+export default AviFlow;
