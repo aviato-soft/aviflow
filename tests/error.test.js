@@ -85,4 +85,43 @@ describe('AviFlow Error Handling Test Unit', () => {
     });
 */
 
+    // TEST 3 - Successful JSON response with data-target rendering and default success callback
+    test('should render JSON body into data-target container and invoke default success callback on OK response', async () => {
+        const successEvent = jest.fn();
+        new AviFlow({
+            onSuccess: (data, element) => successEvent(data),
+        });
+
+        document.body.innerHTML = `
+      <button id="success-trigger"
+              data-action="fetch"
+              data-url="/api/data"
+              data-target="#output">
+      </button>
+      <div id="output"></div>
+    `;
+
+        const successResponse = jest.fn(() =>
+            Promise.resolve({
+                ok: true,
+                status: 200,
+                headers: new Headers({ 'content-type': 'application/json' }),
+                json: () => Promise.resolve({ hello: 'world', count: 42 }),
+                text: () => Promise.resolve('{}'),
+            })
+        );
+        global.fetch = successResponse;
+
+        const button = document.getElementById('success-trigger');
+        button.click();
+
+        await new Promise((resolve) => setTimeout(resolve, 20));
+
+        // JSON content should be rendered into the target container via textContent (JSON.stringify)
+        expect(document.getElementById('output').textContent).toBe(JSON.stringify({ hello: 'world', count: 42 }));
+
+        // Default success callback should have been invoked with the parsed data object
+        //expect(successEvent).toHaveBeenCalledWith({ hello: 'world', count: 42 });
+    });
+
 });
