@@ -36,6 +36,224 @@
  */
 class AviFlow {
 
+  /**
+   * Integrated tools.
+   */
+  tools = {
+
+    /**
+    * Helper to execute dynamic callbacks defined in data-attributes (e.g. data-on-success, data-on-error)
+    * It checks if the string resolves to a function path in the window object (e.g., 'console.log')
+    * or evaluates the string as Javascript code.
+    * 
+    * @param {HTMLElement} element
+    * @param {string} attrName Dataset attribute name (camelCase, e.g. 'onSuccess')
+    * @param {...*} args Arguments to pass to the function/code evaluation
+    */
+    executeCallback: (element, attrName, ...args) => {
+      const callbackStr = element.dataset[attrName];
+      if (!callbackStr) return;
+
+      try {
+        // Check if it's a global function path (e.g. "avi.onSuccess" or "alert")
+        const parts = callbackStr.split('.');
+        let func = typeof window !== 'undefined' ? window : null;
+        for (const part of parts) {
+          if (func) {
+            func = func[part];
+          }
+        }
+
+        if (typeof func === 'function') {
+          func.apply(element, args);
+        } else {
+          // Otherwise, evaluate it as code. Pass arguments named after their purpose.
+          const fn = new Function('data', 'element', 'error', callbackStr);
+          fn.apply(element, args);
+        }
+      } catch (e) {
+        //console.error(`Error executing AviFlow callback for ${attrName}:`, e);
+        return e;
+      }
+    },
+
+
+    /**
+   * Filters attributes of an element that match a given prefix.
+   *
+   * @param {HTMLElement} element   The target element
+   * @param {string}      [prefix = '']   Optional attribute name prefix
+   * @param {boolean}     [capitalizeKey = false]  Whether to capitalize key names
+   * @returns {Array<[string, string]>} Array of `[attributeNameWithoutPrefix, value]` pairs
+   */
+    filterAttributes: (element, prefix = '', capitalizeKey = false) => {
+      return Array.from(element.attributes)
+        .filter((attr) => attr.name.startsWith(prefix))
+        .map(({ name, value }) => {
+          let key = name.slice(prefix.length);
+          if (capitalizeKey) {
+            key = this.tools.toCapitalize(key);
+          }
+          return [key, value];
+        });
+    },
+
+
+    /**
+   * Filters dataset entries of an element that match a given prefix.
+   *
+   * @param {HTMLElement} element   The target element
+   * @param {string}      [prefix = '']  Optional key prefix, Defaults to `''` (all keys)
+   * @returns {Array<[string, string]>} Array of `[keyWithoutPrefix, value]` pairs
+
+   */
+    filterDataset: (element, prefix = '') => {
+      return Object.entries(element.dataset)
+        .filter(([key]) => key.startsWith(prefix))
+        .map(([key, value]) => [key.slice(prefix.length), value]);
+    },
+
+
+    /**
+     * Builds an object from attributes or dataset entries that share a common prefix.
+     *
+     * Reads the element's `dataset` by default; pass `'attribute'` as the third argument to read HTML attributes instead.
+     *
+     * @param {HTMLElement}  element          The target element
+     * @param {string}       [prefix = '']    Optional name prefix (e.g. `body`, `data-body-param`)
+     * @param {'dataset'|'attributes'} [use]  Where to read from: `'dataset'` or `'attribute'`
+     * @returns {Object.<string, string>} Object with `[keyWithoutPrefix]: value` entries
+
+     */
+    formEntries: (element, prefix = '', use = 'dataset') => {
+      if (use === 'dataset') {
+        return Object.fromEntries(this.tools.filterDataset(element, prefix));
+      }
+
+      if (use === 'attributes') {
+        if (prefix === '') {
+          return Object.fromEntries(this.tools.filterAttributes(element, 'data-', true));
+        } else {
+          return Object.fromEntries(this.tools.filterAttributes(element, `data-${prefix}-`, true));
+        }
+      }
+
+      return {};
+    },
+
+
+    /**
+     * Builds a `FormData` object by calling {@linkcode formEntries} with the default `'param'` prefix.
+     *
+     * @param {HTMLElement} element The target element
+     * @param {string}      [prefix = 'param'] Key prefix (default: `'param'`).
+     * @returns {FormData}
+     */
+
+    formData: (element, prefix = 'param') => {
+      const data = new FormData();
+      const formEntries = this.tools.formEntries(element, prefix);
+
+      if (this.tools.isEmptyObject(formEntries)) {
+        return data;
+      }
+
+      for (const [key, value] of Object.entries(formEntries)) {
+        if (value !== undefined && value !== null) {
+          data.append(this.tools.toCamelCase(key), value);
+        }
+      }
+
+      return data;
+    },
+
+
+    /**
+   * Returns `true` if the given value is a non-null, empty plain object.
+   *
+   * @param {*} o   The value to check (or `null`).
+   * @returns {boolean}
+   */
+    isEmptyObject: (o) => {
+      //is this an object ?
+      if (!o || typeof o !== 'object') {
+        return false;
+      }
+
+      // Performance win: if it has any enumerable properties, it's not empty
+      for (let _key in o) {
+        return false;
+      }
+
+      // Confirm it is an object:
+      return o.constructor === Object;
+    },
+
+
+    /**
+* Manages the visual loading state of an element (pending class, pointer-events and opacity).
+*
+* Uses a custom CSS class from `element.dataset['data-on-progress']` if present,
+* otherwise falls back to {@linkcode this.options.pendingClass}.
+*
+* @param {HTMLElement} element
+* @param {boolean} isLoading Whether the operation is in progress (`true`) or complete (`false`).
+*/
+    setLoadingState: (element, isLoading, originalContent = '') => {
+      const pendingClass = Object.prototype.hasOwnProperty.call(element.dataset, 'data-on-progress')
+        ? element.dataset['data-on-progress']
+        : this.options.pendingClass;
+
+      if (isLoading) {
+        element.classList.add(pendingClass);
+        element.disabled = true;
+        element.setAttribute('disabled', '');
+        element.style.opacity = '0.6';
+        element.style.pointerEvents = 'none';
+      } else {
+        element.classList.remove(pendingClass);
+        element.disabled = false;
+        element.innerHTML = originalContent;
+        element.removeAttribute('disabled');
+        element.style.opacity = '';
+        element.style.pointerEvents = '';
+      }
+    },
+
+
+    /**
+     * Converts a string to camelCase.  Non-string inputs return an empty string.
+     *
+     * @param {*} text   The input string.
+     * @returns {string}
+     */
+    toCamelCase: (text) => {
+      if (typeof text !== 'string') {
+        return '';
+      }
+
+      return text
+        .trim()
+        .toLowerCase()
+        .replace(/^[-_\s]+/, '')
+        .replace(/[-_\s]+(.)?/g, (_, letter) => (letter ? letter.toUpperCase() : ''));
+    },
+
+
+    /**
+     * Converts a string to camelCase.  Non-string inputs return an empty string.
+     *
+     * @param {*} text   The input string.
+     * @returns {string}
+     */
+    toCapitalize: (text) => {
+      const trimText = text
+        .trim()
+        .replace(/^[-_\s]+/, '');
+      return trimText.charAt(0).toUpperCase() + trimText.slice(1);
+    }
+  };
+
   constructor(options = {}) {
     // Default configurations
     this.options = {
@@ -61,233 +279,13 @@ class AviFlow {
           await this.handleFetch(triggerElement);
         }
       });
-    }
+    };
 
 
     this.on = {
       success: (data, element) => this.default.success(data, element),
       error: (data, element, error) => this.default.error(data, element, error),
-    }
-
-
-    /**
-   * Integrated tools.
-   */
-    this.tools = {
-
-      /**
-      * Helper to execute dynamic callbacks defined in data-attributes (e.g. data-on-success, data-on-error)
-      * It checks if the string resolves to a function path in the window object (e.g., 'console.log')
-      * or evaluates the string as Javascript code.
-      * 
-      * @param {HTMLElement} element
-      * @param {string} attrName Dataset attribute name (camelCase, e.g. 'onSuccess')
-      * @param {...*} args Arguments to pass to the function/code evaluation
-      */
-      executeCallback: (element, attrName, ...args) => {
-        const callbackStr = element.dataset[attrName];
-        if (!callbackStr) return;
-
-        try {
-          // Check if it's a global function path (e.g. "avi.onSuccess" or "alert")
-          const parts = callbackStr.split('.');
-          let func = typeof window !== 'undefined' ? window : null;
-          for (const part of parts) {
-            if (func) {
-              func = func[part];
-            }
-          }
-
-          if (typeof func === 'function') {
-            func.apply(element, args);
-          } else {
-            // Otherwise, evaluate it as code. Pass arguments named after their purpose.
-            const fn = new Function('data', 'element', 'error', callbackStr);
-            fn.apply(element, args);
-          }
-        } catch (e) {
-          //console.error(`Error executing AviFlow callback for ${attrName}:`, e);
-          return e;
-        }
-      },
-
-
-      /**
-     * Filters attributes of an element that match a given prefix.
-     *
-     * @param {HTMLElement} element   The target element
-     * @param {string}      [prefix = '']   Optional attribute name prefix
-     * @param {boolean}     [capitalizeKey = false]  Whether to capitalize key names
-     * @returns {Array<[string, string]>} Array of `[attributeNameWithoutPrefix, value]` pairs
-     */
-      filterAttributes: (element, prefix = '', capitalizeKey = false) => {
-        return Array.from(element.attributes)
-          .filter((attr) => attr.name.startsWith(prefix))
-          .map(({ name, value }) => {
-            let key = name.slice(prefix.length);
-            if (capitalizeKey) {
-              key = this.tools.toCapitalize(key);
-            }
-            return [key, value];
-          });
-      },
-
-
-      /**
-     * Filters dataset entries of an element that match a given prefix.
-     *
-     * @param {HTMLElement} element   The target element
-     * @param {string}      [prefix = '']  Optional key prefix, Defaults to `''` (all keys)
-     * @returns {Array<[string, string]>} Array of `[keyWithoutPrefix, value]` pairs
-
-     */
-      filterDataset: (element, prefix = '') => {
-        return Object.entries(element.dataset)
-          .filter(([key]) => key.startsWith(prefix))
-          .map(([key, value]) => [key.slice(prefix.length), value]);
-      },
-
-
-      /**
-       * Builds an object from attributes or dataset entries that share a common prefix.
-       *
-       * Reads the element's `dataset` by default; pass `'attribute'` as the third argument to read HTML attributes instead.
-       *
-       * @param {HTMLElement}  element          The target element
-       * @param {string}       [prefix = '']    Optional name prefix (e.g. `body`, `data-body-param`)
-       * @param {'dataset'|'attributes'} [use]  Where to read from: `'dataset'` or `'attribute'`
-       * @returns {Object.<string, string>} Object with `[keyWithoutPrefix]: value` entries
-  
-       */
-      formEntries: (element, prefix = '', use = 'dataset') => {
-        if (use === 'dataset') {
-          return Object.fromEntries(this.tools.filterDataset(element, prefix));
-        }
-
-        if (use === 'attributes') {
-          if (prefix === '') {
-            return Object.fromEntries(this.tools.filterAttributes(element, 'data-', true));
-          } else {
-            return Object.fromEntries(this.tools.filterAttributes(element, `data-${prefix}-`, true));
-          }
-        }
-
-        return {};
-      },
-
-
-      /**
-       * Builds a `FormData` object by calling {@linkcode formEntries} with the default `'param'` prefix.
-       *
-       * @param {HTMLElement} element The target element
-       * @param {string}      [prefix = 'param'] Key prefix (default: `'param'`).
-       * @returns {FormData}
-       */
-
-      formData: (element, prefix = 'param') => {
-        const data = new FormData();
-        const formEntries = this.tools.formEntries(element, prefix);
-
-        if (this.tools.isEmptyObject(formEntries)) {
-          return data;
-        }
-
-        for (const [key, value] of Object.entries(formEntries)) {
-          if (value !== undefined && value !== null) {
-            data.append(this.tools.toCamelCase(key), value);
-          }
-        }
-
-        return data;
-      },
-
-
-      /**
-    * Returns `true` if the given value is a non-null, empty plain object.
-    *
-    * @param {*} o   The value to check (or `null`).
-    * @returns {boolean}
-    */
-      isEmptyObject: (o) => {
-        //is this an object ?
-        if (!o || typeof o !== 'object') {
-          return false;
-        }
-
-        // Performance win: if it has any enumerable properties, it's not empty
-        for (let _key in o) {
-          return false;
-        }
-
-        // Confirm it is an object:
-        return o.constructor === Object;
-      },
-
-
-      /**
-  * Manages the visual loading state of an element (pending class, pointer-events and opacity).
-  *
-  * Uses a custom CSS class from `element.dataset['data-on-progress']` if present,
-  * otherwise falls back to {@linkcode this.options.pendingClass}.
-  *
-  * @param {HTMLElement} element
-  * @param {boolean} isLoading Whether the operation is in progress (`true`) or complete (`false`).
-  */
-      setLoadingState: (element, isLoading, originalContent = '') => {
-        const pendingClass = Object.prototype.hasOwnProperty.call(element.dataset, 'data-on-progress')
-          ? element.dataset['data-on-progress']
-          : this.options.pendingClass;
-
-        if (isLoading) {
-          element.classList.add(pendingClass);
-          element.disabled = true;
-          element.setAttribute('disabled', '');
-          element.style.opacity = '0.6';
-          element.style.pointerEvents = 'none';
-        } else {
-          element.classList.remove(pendingClass);
-          element.disabled = false;
-          element.innerHTML = originalContent;
-          element.removeAttribute('disabled');
-          element.style.opacity = ''
-          element.style.pointerEvents = '';
-        }
-      },
-
-
-      /**
-       * Converts a string to camelCase.  Non-string inputs return an empty string.
-       *
-       * @param {*} text   The input string.
-       * @returns {string}
-       */
-      toCamelCase: (text) => {
-        if (typeof text !== 'string') {
-          return '';
-        }
-
-        return text
-          .trim()
-          .toLowerCase()
-          .replace(/^[-_\s]+/, '')
-          .replace(/[-_\s]+(.)?/g, (_, letter) => (letter ? letter.toUpperCase() : ''));
-      },
-
-
-      /**
-       * Converts a string to camelCase.  Non-string inputs return an empty string.
-       *
-       * @param {*} text   The input string.
-       * @returns {string}
-       */
-      toCapitalize: (text) => {
-        const trimText = text
-          .trim()
-          .replace(/^[-_\s]+/, '');
-        return trimText.charAt(0).toUpperCase() + trimText.slice(1);
-      }
-    }
-
+    };
 
 
     //run initialization
@@ -361,8 +359,7 @@ class AviFlow {
       }
 
       const response = await fetch(url, fetchOptions);
-      if (this.options.debug != undefined && this.options.debug === true) console.log(['DEBUG MODE!', url, fetchOptions]);
-
+      
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
