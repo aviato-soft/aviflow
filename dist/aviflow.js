@@ -244,6 +244,7 @@ var AviFlow = class {
         fetchOptions.headers["Content-Type"] = "application/json; charset=UTF-8";
       }
       const response = await fetch(url, fetchOptions);
+      if (this.options.debug != void 0 && this.options.debug === true) console.log(["DEBUG MODE!", url, fetchOptions]);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }

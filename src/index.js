@@ -46,6 +46,7 @@ class AviFlow {
       ...options
     };
 
+
     /**
    * Initializes the event listener on the document body (Event Delegation)
    * This ensures elements added dynamically via JS later are also covered.
@@ -360,6 +361,7 @@ class AviFlow {
       }
 
       const response = await fetch(url, fetchOptions);
+      if (this.options.debug != undefined && this.options.debug === true) console.log(['DEBUG MODE!', url, fetchOptions]);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -374,10 +376,14 @@ class AviFlow {
         data = await response.text();
       }
 
+      
+
       // Render automatically if data-target is provided
       if (targetSelector) {
         const targetContainer = document.querySelector(targetSelector);
+        
         if (targetContainer) {
+          
           if (typeof data === 'object') {
             if (data.html && typeof data.html === 'string') {
               targetContainer.innerHTML = data.html;
