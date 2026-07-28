@@ -84,15 +84,18 @@ class AviFlow {
   * This ensures elements added dynamically via JS later are also covered.
   */
   init() {
-    document.body.addEventListener('click', async (event) => {
-      // Find closest element matching selector (handles nested icons/spans inside a button)
-      const triggerElement = event.target.closest(this.options.selector);
+    if ( typeof window !== 'undefined' ) {
+      document.body.addEventListener('click', async (event) => {
 
-      if (triggerElement) {
-        event.preventDefault();
-        await this.handleFetch(triggerElement);
-      }
-    });
+        // Find closest element matching selector (handles nested icons/spans inside a button)
+        const triggerElement = event.target.closest(this.options.selector);
+
+        if (triggerElement) {
+          event.preventDefault();
+          await this.handleFetch(triggerElement);
+        }
+      });
+    }
   }
 
 

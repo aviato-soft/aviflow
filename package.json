@@ -20,7 +20,7 @@
     "build:standalone": "esbuild src/index.js --bundle --minify --format=iife --global-name=AviFlow --footer:js=\"if(typeof AviFlow!=='undefined'&&AviFlow.default)AviFlow=AviFlow.default;\" --outfile=dist/aviflow.min.js",
     "build": "npm run build:modern && npm run build:standalone",
     "watch": "esbuild src/index.js --bundle --watch --outfile=dist/aviflow.js",
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage"
+    "test": "node --no-warnings --experimental-vm-modules node_modules/jest/bin/jest.js --coverage"
   },
   "jest": {
     "testEnvironment": "jsdom",

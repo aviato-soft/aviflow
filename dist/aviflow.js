@@ -35,13 +35,15 @@ var AviFlow = class {
   * This ensures elements added dynamically via JS later are also covered.
   */
   init() {
-    document.body.addEventListener("click", async (event) => {
-      const triggerElement = event.target.closest(this.options.selector);
-      if (triggerElement) {
-        event.preventDefault();
-        await this.handleFetch(triggerElement);
-      }
-    });
+    if (typeof window !== "undefined") {
+      document.body.addEventListener("click", async (event) => {
+        const triggerElement = event.target.closest(this.options.selector);
+        if (triggerElement) {
+          event.preventDefault();
+          await this.handleFetch(triggerElement);
+        }
+      });
+    }
   }
   /**
    * Integrated tools.

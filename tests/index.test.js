@@ -1,5 +1,3 @@
-// tests/index.test.js
-
 import { expect, jest } from '@jest/globals';
 import AviFlow from '../src/index.js';
 

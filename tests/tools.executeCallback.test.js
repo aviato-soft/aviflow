@@ -67,32 +67,50 @@ describe('AviFlow Tools / executeCallback Test Unit', () => {
         expect(errResult).toBeInstanceOf(Error);
     });
 
-/*
-    test('handles scenario where window is undefined (Node-like environment)', () => {
-        // This test targets the branch: let func = typeof window !== 'undefined' ? window : null;
-        // when typeof window === 'undefined'.
+    /*
+    test('handles undefined window when executing callback (line 121 null branch)', () => {
         const originalWindow = global.window;
-
-        // In many test environments (like JSDOM), window is read-only and not configurable directly on 'global'
-        // We attempt to simulate the absence of window.
-        const isConfigurable = Object.getOwnPropertyDescriptor(global, 'window')?.configurable;
-
-        //if (isConfigurable) {
-            Object.defineProperty(global, 'window', { value: undefined, configurable: true });
-            try {
-                const logSpy = jest.spyOn(console, 'log').mockImplementation(() => { });
-                const element = { dataset: { onTestEval: 'console.log("fallback working")' } };
-                aviflow.tools.executeCallback(element, 'onTestEval');
-                expect(logSpy).toHaveBeenCalledWith('fallback working');
-                logSpy.mockRestore();
-            } finally {
-                Object.defineProperty(global, 'window', { value: originalWindow, configurable: true });
+        try {
+            // Attempt to temporarily delete window from global scope
+            delete global.window;
+            
+            // If delete global.window does not change typeof window (due to JSDOM configuration),
+            // redefine window as undefined.
+            if (typeof window !== 'undefined') {
+                Object.defineProperty(global, 'window', {
+                    value: undefined,
+                    configurable: true,
+                    writable: true
+                });
             }
-        //} else {
-            // If we can't redefine window, we acknowledge the limitation of the test environment
-            // rather than failing the whole suite.
-        //    console.warn('Skipping "func = null" branch test: window is not configurable in this environment.');
-        //}
+
+            const logSpy = jest.spyOn(console, 'log').mockImplementation(() => { });
+            
+            // Should fallback to evaluating 'console.log('executed')' because window is undefined/null
+            aviflow.tools.executeCallback(mock.element.button.test, 'onTestEval');
+            
+            expect(logSpy).toHaveBeenCalledWith('executed');
+            logSpy.mockRestore();
+        } finally {
+            // Restore original window object
+            if (originalWindow) {
+                Object.defineProperty(global, 'window', {
+                    value: originalWindow,
+                    configurable: true,
+                    writable: true
+                });
+            }
+        }
     });
-*/
+    */
+
+    test('handles nonexistent dotted path safely (covers loop if condition)', () => {
+        // Using a non-existent dotted path with multiple parts (e.g. console.log.nonexistent.subpart)
+        // will set func to undefined, causing 'if (func)' to be falsy for the remaining parts.
+        // Then it will fall back to evaluating the attribute as code.
+        mock.element.button.test.setAttribute('data-on-success', 'console.log.nonexistent.subpart');
+        const errResult = aviflow.tools.executeCallback(mock.element.button.test, 'onSuccess');
+        
+        expect(errResult).toBeInstanceOf(TypeError);
+    });
 })
