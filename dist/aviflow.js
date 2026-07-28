@@ -1,18 +1,61 @@
 // src/index.js
 var AviFlow = class {
+  constructor(options = {}) {
+    this.options = {
+      selector: '[data-action="fetch"]',
+      url: "#",
+      method: "POST",
+      pendingClass: "pending",
+      ...options
+    };
+    this.on = {
+      success: (data, element) => this.default.success(data, element),
+      error: (data, element, error) => this.default.error(data, element, error)
+    };
+    this.init();
+  }
+  /**
+   * Default fallback hooks that also dispatch standard CustomEvents 
+   * so other parts of your app can listen cleanly.
+   */
+  default = {
+    error: function(data, element, error) {
+      const event = new CustomEvent("aviflow:error", { bubbles: true, detail: data });
+      if (error !== void 0) {
+        event.error = error;
+      }
+      element.dispatchEvent(event);
+    },
+    success: function(data, element) {
+      element.dispatchEvent(new CustomEvent("aviflow:success", { bubbles: true, detail: data }));
+    }
+  };
+  /**
+  * Initializes the event listener on the document body (Event Delegation)
+  * This ensures elements added dynamically via JS later are also covered.
+  */
+  init() {
+    document.body.addEventListener("click", async (event) => {
+      const triggerElement = event.target.closest(this.options.selector);
+      if (triggerElement) {
+        event.preventDefault();
+        await this.handleFetch(triggerElement);
+      }
+    });
+  }
   /**
    * Integrated tools.
    */
   tools = {
     /**
-    * Helper to execute dynamic callbacks defined in data-attributes (e.g. data-on-success, data-on-error)
-    * It checks if the string resolves to a function path in the window object (e.g., 'console.log')
-    * or evaluates the string as Javascript code.
-    * 
-    * @param {HTMLElement} element
-    * @param {string} attrName Dataset attribute name (camelCase, e.g. 'onSuccess')
-    * @param {...*} args Arguments to pass to the function/code evaluation
-    */
+     * Helper to execute dynamic callbacks defined in data-attributes (e.g. data-on-success, data-on-error)
+     * It checks if the string resolves to a function path in the window object (e.g., 'console.log')
+     * or evaluates the string as Javascript code.
+     * 
+     * @param {HTMLElement} element
+     * @param {string} attrName Dataset attribute name (camelCase, e.g. 'onSuccess')
+     * @param {...*} args Arguments to pass to the function/code evaluation
+     */
     executeCallback: (element, attrName, ...args) => {
       const callbackStr = element.dataset[attrName];
       if (!callbackStr) return;
@@ -35,13 +78,13 @@ var AviFlow = class {
       }
     },
     /**
-    * Filters attributes of an element that match a given prefix.
-    *
-    * @param {HTMLElement} element   The target element
-    * @param {string}      [prefix = '']   Optional attribute name prefix
-    * @param {boolean}     [capitalizeKey = false]  Whether to capitalize key names
-    * @returns {Array<[string, string]>} Array of `[attributeNameWithoutPrefix, value]` pairs
-    */
+     * Filters attributes of an element that match a given prefix.
+     *
+     * @param {HTMLElement} element   The target element
+     * @param {string}      [prefix = '']   Optional attribute name prefix
+     * @param {boolean}     [capitalizeKey = false]  Whether to capitalize key names
+     * @returns {Array<[string, string]>} Array of `[attributeNameWithoutPrefix, value]` pairs
+     */
     filterAttributes: (element, prefix = "", capitalizeKey = false) => {
       return Array.from(element.attributes).filter((attr) => attr.name.startsWith(prefix)).map(({ name, value }) => {
         let key = name.slice(prefix.length);
@@ -52,39 +95,15 @@ var AviFlow = class {
       });
     },
     /**
-       * Filters dataset entries of an element that match a given prefix.
-       *
-       * @param {HTMLElement} element   The target element
-       * @param {string}      [prefix = '']  Optional key prefix, Defaults to `''` (all keys)
-       * @returns {Array<[string, string]>} Array of `[keyWithoutPrefix, value]` pairs
-    
-       */
+     * Filters dataset entries of an element that match a given prefix.
+     *
+     * @param {HTMLElement} element   The target element
+     * @param {string}      [prefix = '']  Optional key prefix, Defaults to `''` (all keys)
+     * @returns {Array<[string, string]>} Array of `[keyWithoutPrefix, value]` pairs
+     *
+     */
     filterDataset: (element, prefix = "") => {
       return Object.entries(element.dataset).filter(([key]) => key.startsWith(prefix)).map(([key, value]) => [key.slice(prefix.length), value]);
-    },
-    /**
-         * Builds an object from attributes or dataset entries that share a common prefix.
-         *
-         * Reads the element's `dataset` by default; pass `'attribute'` as the third argument to read HTML attributes instead.
-         *
-         * @param {HTMLElement}  element          The target element
-         * @param {string}       [prefix = '']    Optional name prefix (e.g. `body`, `data-body-param`)
-         * @param {'dataset'|'attributes'} [use]  Where to read from: `'dataset'` or `'attribute'`
-         * @returns {Object.<string, string>} Object with `[keyWithoutPrefix]: value` entries
-    
-         */
-    formEntries: (element, prefix = "", use = "dataset") => {
-      if (use === "dataset") {
-        return Object.fromEntries(this.tools.filterDataset(element, prefix));
-      }
-      if (use === "attributes") {
-        if (prefix === "") {
-          return Object.fromEntries(this.tools.filterAttributes(element, "data-", true));
-        } else {
-          return Object.fromEntries(this.tools.filterAttributes(element, `data-${prefix}-`, true));
-        }
-      }
-      return {};
     },
     /**
      * Builds a `FormData` object by calling {@linkcode formEntries} with the default `'param'` prefix.
@@ -107,11 +126,36 @@ var AviFlow = class {
       return data;
     },
     /**
-    * Returns `true` if the given value is a non-null, empty plain object.
-    *
-    * @param {*} o   The value to check (or `null`).
-    * @returns {boolean}
-    */
+     * Builds an object from dataset or [data-*] attributes entries that share a common prefix.
+     *
+     * Reads the element's `dataset` by default; 
+     * Pass `'attribute'` as the third argument to read HTML attributes instead.
+     *
+     * @param {HTMLElement}  element          The target element
+     * @param {string}       [prefix = '']    Optional name prefix (e.g. `body`, `data-body-param`)
+     * @param {'dataset'|'attributes'} [use]  Where to read from: `'dataset'` or `'attribute'`
+     * @returns {Object.<string, string>} Object with `[keyWithoutPrefix]: value` entries
+     *
+     */
+    formEntries: (element, prefix = "", use = "dataset") => {
+      if (use === "dataset") {
+        return Object.fromEntries(this.tools.filterDataset(element, prefix));
+      }
+      if (use === "attributes") {
+        if (prefix === "") {
+          return Object.fromEntries(this.tools.filterAttributes(element, "data-", true));
+        } else {
+          return Object.fromEntries(this.tools.filterAttributes(element, `data-${prefix}-`, true));
+        }
+      }
+      return {};
+    },
+    /**
+     * Returns `true` if the given value is a non-null, empty plain object.
+     *
+     * @param {*} o   The value to check (or `null`).
+     * @returns {boolean}
+     */
     isEmptyObject: (o) => {
       if (!o || typeof o !== "object") {
         return false;
@@ -122,16 +166,16 @@ var AviFlow = class {
       return o.constructor === Object;
     },
     /**
-    * Manages the visual loading state of an element (pending class, pointer-events and opacity).
-    *
-    * Uses a custom CSS class from `element.dataset['data-on-progress']` if present,
-    * otherwise falls back to {@linkcode this.options.pendingClass}.
-    *
-    * @param {HTMLElement} element
-    * @param {boolean} isLoading Whether the operation is in progress (`true`) or complete (`false`).
-    */
+     * Manages the visual loading state of an element (pending class, pointer-events and opacity).
+     *
+     * Uses a custom CSS class from `element.dataset['data-on-progress']` if present,
+     * otherwise falls back to {@linkcode this.options.pendingClass}.
+     *
+     * @param {HTMLElement} element
+     * @param {boolean} isLoading Whether the operation is in progress (`true`) or complete (`false`).
+     */
     setLoadingState: (element, isLoading, originalContent = "") => {
-      const pendingClass = Object.prototype.hasOwnProperty.call(element.dataset, "data-on-progress") ? element.dataset["data-on-progress"] : this.options.pendingClass;
+      const pendingClass = Object.prototype.hasOwnProperty.call(element.dataset, "onProgress") ? element.dataset["onProgress"] : this.options.pendingClass;
       if (isLoading) {
         element.classList.add(pendingClass);
         element.disabled = true;
@@ -170,45 +214,11 @@ var AviFlow = class {
       return trimText.charAt(0).toUpperCase() + trimText.slice(1);
     }
   };
-  constructor(options = {}) {
-    this.options = {
-      selector: '[data-action="fetch"]',
-      url: "#",
-      method: "POST",
-      pendingClass: "pending",
-      ...options
-    };
-    this.init = () => {
-      document.body.addEventListener("click", async (event) => {
-        const triggerElement = event.target.closest(this.options.selector);
-        if (triggerElement) {
-          event.preventDefault();
-          await this.handleFetch(triggerElement);
-        }
-      });
-    };
-    this.on = {
-      success: (data, element) => this.default.success(data, element),
-      error: (data, element, error) => this.default.error(data, element, error)
-    };
-    this.init();
-  }
-  /**
-   * Default fallback hooks that also dispatch standard CustomEvents 
-   * so other parts of your app can listen cleanly.
-   */
-  default = {
-    error: function(data, element, error) {
-      element.dispatchEvent(new CustomEvent("aviflow:error", { detail: data, bubbles: true, error }));
-    },
-    success: function(data, element) {
-      element.dispatchEvent(new CustomEvent("aviflow:success", { detail: data, bubbles: true }));
-    }
-  };
   /**
      * Execute target.flow on element success
      * @param {} element 
      * WIP
+     *  data-flow = flow fn controller
      *  data-target
      *  data-success
      *  data-error
