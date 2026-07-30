@@ -3,8 +3,6 @@
   "version": "1.0.0",
   "description": "A lightweight, dependency-free JavaScript utility to automate fetch requests using native HTML data-attributes.",
   "type": "module",
-  "main": "./dist/aviflow.min.js",
-  "module": "./dist/aviflow.js",
   "exports": {
     ".": {
       "import": "./dist/aviflow.js",
@@ -12,8 +10,7 @@
     }
   },
   "files": [
-    "dist",
-    "src"
+    "dist"
   ],
   "scripts": {
     "build:modern": "esbuild src/index.js --bundle --format=esm --outfile=dist/aviflow.js",
