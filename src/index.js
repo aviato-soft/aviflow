@@ -99,6 +99,12 @@ class AviFlow {
   }
 
 
+  /**
+   * 
+   * 
+   */
+  fn = {}
+
 
   /**
    * Integrated tools.
@@ -179,27 +185,41 @@ class AviFlow {
 
 
     /**
-     * Builds a `FormData` object by calling {@linkcode formEntries} with the default `'param'` prefix.
+     * Builds a `FormData` object by collecting parameters from the element and optionally its parent.
      *
-     * @param {HTMLElement} element The target element
-     * @param {string}      [prefix = 'param'] Key prefix (default: `'param'`).
+     * @param {HTMLElement} [element] The target element to extract data from.
+     * @param {string}      [prefix = 'param'] Key prefix (e.g., 'param' for data-param-*).
+     * @param {boolean}     [useParentDataset = false] Whether to look for parameters in a parent container using data-parent.
      * @returns {FormData}
      */
-    formData: (element, prefix = 'param') => {
-      const data = new FormData();
-      const formEntries = this.tools.formEntries(element, prefix);
-
-      if (this.tools.isEmptyObject(formEntries)) {
-        return data;
-      }
-
-      for (const [key, value] of Object.entries(formEntries)) {
-        if (value !== undefined && value !== null) {
-          data.append(this.tools.toCamelCase(key), value);
+    formData: (element, prefix = 'param', useParentDataset = null) => {
+        if (!element) {
+            return new FormData();
         }
-      }
 
-      return data;
+        let entries = {};
+
+        // Extract Parent Dataset if requested
+        if (element.dataset.parent && useParentDataset !== false) {
+            const parentElement = document.querySelector(element.dataset.parent);
+            if (parentElement) {
+                entries = { ...entries, ...this.tools.formEntries(parentElement, prefix) };
+            }
+        }
+
+        // Extract Element Data (Overwrites parent entries)
+        entries = { ...entries, ...this.tools.formEntries(element, prefix) };
+
+        const data = new FormData();
+
+        // Single loop to append all merged entries to FormData
+        for (const [key, value] of Object.entries(entries)) {
+            if (value !== undefined && value !== null) {
+                data.append(this.tools.toCamelCase(key), value);
+            }
+        }
+
+        return data;
     },
 
 
@@ -290,26 +310,48 @@ class AviFlow {
      * Converts a string to camelCase.  Non-string inputs return an empty string.
      *
      * @param {*} text   The input string.
+     * @param {boolean} firstLetterLower  If true, the first letter of the result will be lowercase. Defaults to true.
      * @returns {string}
      */
-    toCamelCase: (text) => {
+    toCamelCase: (text, firstLetterLower = true) => {
       if (typeof text !== 'string') {
         return '';
       }
 
-      return text
+      let result = text
         .trim()
-        .toLowerCase()
         .replace(/^[-_\s]+/, '')
         .replace(/[-_\s]+(.)?/g, (_, letter) => (letter ? letter.toUpperCase() : ''));
+
+      if (result.length === 0) return '';
+
+      if (firstLetterLower) {
+        // camelCase
+        return result.charAt(0).toLowerCase() + result.slice(1);
+      } else {
+        // PascalCase
+        return this.tools.toCapitalize(result);        
+      }
+    },
+    
+
+    /**
+     * Converts a string to PascalCase (capitalizes the first letter and subsequent words).
+     * Non-string inputs return an empty string.
+     *
+     * @param {*} text   The input string.
+     * @returns {string} The PascalCased string.
+     */
+    toPascalCase: (text) => {
+      return this.tools.toCamelCase(text, false);
     },
 
 
     /**
-     * Converts a string to camelCase.  Non-string inputs return an empty string.
+     * Capitalizes the first letter of a string. Non-string inputs return an empty string.
      *
      * @param {*} text   The input string.
-     * @returns {string}
+     * @returns {string} The capitalized string.
      */
     toCapitalize: (text) => {
       const trimText = text
@@ -324,17 +366,24 @@ class AviFlow {
   /**
    * Execute target.flow on element success
    * @param {} element 
-   * WIP
-   *  data-flow = flow fn controller
-   *  data-target
-   *  data-success
-   *  data-error
-   * /
-  async flow(element) {
-    console.log('fow was called on element');
-    console.log(element);
+   * WIP:
+   *  data-flow = aviflow.fn.controller
+   *  data-event = click | change | ...
+   * 
+   * aviflow.handleFetch -> aviflow.fn.fetch 
+   * 
+   * e.g.
+   *  data-action = fetch 
+   *  => data-action = fetch|click 
+   *     =>
+   *       - data-flow = fetch
+   *       - data-event = click | element.on.click = ...
+   *
+  fn: {
+    async fetch(element) {
+    },
   }
-
+   */
 
 
   /**

@@ -8,8 +8,12 @@ describe('AviFlow Tools Test Unit', () => {
         let expected = "helloWorld";
         expect(result).toEqual(expected);
 
-        result = aviflow.tools.toCamelCase("Convert-me-now");
-        expected = "convertMeNow";
+        result = aviflow.tools.toCamelCase("Convert-me-now", false);
+        expected = "ConvertMeNow";
+        expect(result).toEqual(expected);
+
+        result = aviflow.tools.toCamelCase("CamelCase-test-case");
+        expected = "camelCaseTestCase";
         expect(result).toEqual(expected);
 
         result = aviflow.tools.toCamelCase("pages count");
