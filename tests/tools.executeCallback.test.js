@@ -67,42 +67,6 @@ describe('AviFlow Tools / executeCallback Test Unit', () => {
         expect(errResult).toBeInstanceOf(Error);
     });
 
-    /*
-    test('handles undefined window when executing callback (line 121 null branch)', () => {
-        const originalWindow = global.window;
-        try {
-            // Attempt to temporarily delete window from global scope
-            delete global.window;
-            
-            // If delete global.window does not change typeof window (due to JSDOM configuration),
-            // redefine window as undefined.
-            if (typeof window !== 'undefined') {
-                Object.defineProperty(global, 'window', {
-                    value: undefined,
-                    configurable: true,
-                    writable: true
-                });
-            }
-
-            const logSpy = jest.spyOn(console, 'log').mockImplementation(() => { });
-            
-            // Should fallback to evaluating 'console.log('executed')' because window is undefined/null
-            aviflow.tools.executeCallback(mock.element.button.test, 'onTestEval');
-            
-            expect(logSpy).toHaveBeenCalledWith('executed');
-            logSpy.mockRestore();
-        } finally {
-            // Restore original window object
-            if (originalWindow) {
-                Object.defineProperty(global, 'window', {
-                    value: originalWindow,
-                    configurable: true,
-                    writable: true
-                });
-            }
-        }
-    });
-    */
 
     test('handles nonexistent dotted path safely (covers loop if condition)', () => {
         // Using a non-existent dotted path with multiple parts (e.g. console.log.nonexistent.subpart)

@@ -17,11 +17,13 @@
     "build:standalone": "esbuild src/index.js --bundle --minify --format=iife --global-name=AviFlow --footer:js=\"if(typeof AviFlow!=='undefined'&&AviFlow.default)AviFlow=AviFlow.default;\" --outfile=dist/aviflow.min.js",
     "build": "npm run build:modern && npm run build:standalone",
     "watch": "esbuild src/index.js --bundle --watch --outfile=dist/aviflow.js",
+    "www": "npx http-server examples --port 8080",
     "test": "node --no-warnings --experimental-vm-modules node_modules/jest/bin/jest.js --coverage"
   },
   "jest": {
     "testEnvironment": "jsdom",
-    "coverageProvider": "babel"
+    "coverageProvider": "babel",
+    "coverageDirectory": "tests/.coverage"
   },
   "keywords": [
     "fetch",
@@ -34,8 +36,12 @@
   "author": "Aviato Soft",
   "license": "Apache 2.0",
   "devDependencies": {
-    "esbuild": "^0.25.0",
+    "esbuild": "^0.28.1",
     "jest": "^30.4.2",
     "jest-environment-jsdom": "^30.4.1"
+  },
+  "allowScripts": {
+    "esbuild@0.28.1": true,
+    "unrs-resolver@1.12.2": true
   }
 }
