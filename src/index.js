@@ -79,32 +79,36 @@ class AviFlow {
 
 
   /**
-  * Initializes the event listener on the document body (Event Delegation)
-  * This ensures elements added dynamically via JS later are also covered.
+  * Initializes event listeners for data-action elements, supporting both static and dynamic elements
+  * by using a MutationObserver for event delegation on new elements.
   */
   bind() {
-    if (typeof window !== 'undefined') {
-      const selector = `[data-${this.options.selector}="fetch"]`;
-      let event = 'click';
-      let action = 'fetch';
+    if (typeof window === 'undefined') return;
 
-      document.body.addEventListener(event, async (event) => {
+    const selector = `[data-${this.options.selector}]`;
+    const eventTriggered = 'click';
 
-        // Find closest element matching selector (handles nested icons/spans inside a button)
-        const triggerElement = event.target.closest(selector);
-
-        if (triggerElement) {
-          action = triggerElement.dataset[this.options.selector];
-
-          if (typeof this.fn[action] === 'function') {
-            event.preventDefault();
-            await this.fn[action](triggerElement);
-          } else {
-            console.error(`Action '${action}' not found in fn.`);
-          }
-        }
-      });
+    // Cleanup and then bind to prevent duplicates
+    if (this._actionHandler) {
+      document.body.removeEventListener(eventTriggered, this._actionHandler);
     }
+
+    // Define the handler and assign it to 'this._actionHandler' for persistence across bind() calls
+    this._actionHandler = async (event) => {
+      // Find closest element matching selector (handles nested icons/spans inside a button)
+      const triggerElement = event.target.closest(selector);
+
+      if (triggerElement) {
+        const action = triggerElement.dataset[this.options.selector];
+
+        if (typeof this.fn[action] === 'function') {
+          event.preventDefault();
+          await this.fn[action](triggerElement);
+        }
+      }
+    };
+
+    document.body.addEventListener(eventTriggered, this._actionHandler);
   }
 
 
@@ -227,6 +231,56 @@ class AviFlow {
    * Integrated tools.
    */
   tools = {
+
+    /**
+     * Helper function to apply the correct listeners to an element
+     * @param {HTMLElement} element
+     *
+    applyListeners: (element) => {
+      let action = element.dataset[this.options.selector];
+      if (action === '' || action === 'flow') {
+        action = 'fetch'
+      };
+      if (!action || typeof this.fn[action] !== 'function') return;
+
+      // Determine event type: data-event attribute or default to 'click'
+      const dataEvent = element.dataset.event || 'click';
+
+
+      const handler = async (event) => {
+        event.preventDefault();
+        // Execute the action function
+        await this.fn[action](element);
+      };
+      element.addEventListener(dataEvent, handler);
+
+
+      // Attach the specific event listener
+      /*
+      document.body.addEventListener(dataEvent, async (event) => {
+        event.preventDefault();
+        // Execute the action function
+        await this.fn[action](element);
+      });
+      
+
+      /*
+      document.body.addEventListener(eventTriggeredDefault, async (event) => {
+
+      // Find closest element matching selector (handles nested icons/spans inside a button)
+      const triggerElement = event.target.closest(selector);
+
+      if (triggerElement) {
+        action = triggerElement.dataset[this.options.selector] || 'fetch';
+
+        if (typeof this.fn[action] === 'function') {
+          event.preventDefault();
+          await this.fn[action](triggerElement);
+        }
+      }
+    });
+    
+    },
 
     /**
      * Helper to execute dynamic callbacks defined in data-attributes (e.g. data-on-success, data-on-error)

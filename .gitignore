@@ -1,8 +1,10 @@
 .agents/*
 .prompts/*
 .npm/*
+.theia/launch.json
 node_modules/*
 tests/.coverage
 .npmrc
 package.json
 SYSTEM.md
+
