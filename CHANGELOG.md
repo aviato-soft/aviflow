@@ -9,13 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Add bind to separate binding from init
 - Add support for custom actions not only fetch
-+ Add support for all events not only click using data-event attribute
+- Add support for all events not only click using data-event attribute
 + Use shortcut for data-event on data-action using "|" separator (data-action="action[|event]")
 + Add shortcut for data-flow="true" = { data-action="fetch" data-event="click" }
 
 ### Changed
-+ AviFlow.options.selector became depricated and removed = use datasetSelectorName instead
-+ AviFlow.options.datasetSelectorName represent the dataset selector not css selector
+- AviFlow.options.selector became depricated and removed = use datasetSelectorName instead
+- AviFlow.options.datasetSelectorName represent the dataset selector not css selector
 
 ### Fixed
 - For each bind a multiple event was set, now we have only one call per event

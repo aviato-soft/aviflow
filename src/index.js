@@ -39,7 +39,7 @@ class AviFlow {
   constructor(options = {}) {
     // Default configurations
     this.options = {
-      selector: 'action', // flow will search for elements having set: data-action 
+      datasetSelectorName: 'action', // flow will search for elements having set: data-action 
       url: '#',
       method: 'POST',
       pendingClass: 'pending',
@@ -85,30 +85,40 @@ class AviFlow {
   bind() {
     if (typeof window === 'undefined') return;
 
-    const selector = `[data-${this.options.selector}]`;
-    const eventTriggered = 'click';
+    const selector = `[data-${this.options.datasetSelectorName}]`;
 
-    // Cleanup and then bind to prevent duplicates
-    if (this._actionHandler) {
-      document.body.removeEventListener(eventTriggered, this._actionHandler);
+
+    // Use tools to get all possible events (including 'click' and events specified in data-event)
+    const eventTriggered = this.tools.getUniqueEventsBySelector(selector);
+
+    // Cleanup: Remove listeners for all currently bound events
+    if (this._AviFlowActionHandler) {
+      eventTriggered.forEach(event => {
+        document.body.removeEventListener(event, this._AviFlowActionHandler);
+      });
     }
 
-    // Define the handler and assign it to 'this._actionHandler' for persistence across bind() calls
-    this._actionHandler = async (event) => {
-      // Find closest element matching selector (handles nested icons/spans inside a button)
-      const triggerElement = event.target.closest(selector);
 
-      if (triggerElement) {
-        const action = triggerElement.dataset[this.options.selector];
+    // Define the handler and assign it to 'this._actionHandler' for persistence across bind() calls
+    this._AviFlowActionHandler = async (event) => {
+      // Find closest element matching selector (handles nested icons/spans inside a button)
+      const element = event.target.closest(selector);
+
+      if (element) {
+        const action = element.dataset[this.options.datasetSelectorName];
 
         if (typeof this.fn[action] === 'function') {
           event.preventDefault();
-          await this.fn[action](triggerElement);
+          await this.fn[action](element);
         }
       }
     };
 
-    document.body.addEventListener(eventTriggered, this._actionHandler);
+
+    // Bind for all determined events
+    eventTriggered.forEach(event => {
+      document.body.addEventListener(event, this._AviFlowActionHandler);
+    });
   }
 
 
@@ -231,56 +241,6 @@ class AviFlow {
    * Integrated tools.
    */
   tools = {
-
-    /**
-     * Helper function to apply the correct listeners to an element
-     * @param {HTMLElement} element
-     *
-    applyListeners: (element) => {
-      let action = element.dataset[this.options.selector];
-      if (action === '' || action === 'flow') {
-        action = 'fetch'
-      };
-      if (!action || typeof this.fn[action] !== 'function') return;
-
-      // Determine event type: data-event attribute or default to 'click'
-      const dataEvent = element.dataset.event || 'click';
-
-
-      const handler = async (event) => {
-        event.preventDefault();
-        // Execute the action function
-        await this.fn[action](element);
-      };
-      element.addEventListener(dataEvent, handler);
-
-
-      // Attach the specific event listener
-      /*
-      document.body.addEventListener(dataEvent, async (event) => {
-        event.preventDefault();
-        // Execute the action function
-        await this.fn[action](element);
-      });
-      
-
-      /*
-      document.body.addEventListener(eventTriggeredDefault, async (event) => {
-
-      // Find closest element matching selector (handles nested icons/spans inside a button)
-      const triggerElement = event.target.closest(selector);
-
-      if (triggerElement) {
-        action = triggerElement.dataset[this.options.selector] || 'fetch';
-
-        if (typeof this.fn[action] === 'function') {
-          event.preventDefault();
-          await this.fn[action](triggerElement);
-        }
-      }
-    });
-    
-    },
 
     /**
      * Helper to execute dynamic callbacks defined in data-attributes (e.g. data-on-success, data-on-error)
@@ -420,6 +380,30 @@ class AviFlow {
       }
 
       return {};
+    },
+
+
+    /**
+     * Finds all unique event types defined in the 'data-event' attribute for elements matching the given selector.
+     * Defaults to the selector configured in `options.datasetSelectorName`.
+     *
+     * @param {string | null} [selector] The data- selector to query. Default is '[data-action]'
+     * @returns {string[]} An array of unique event names.
+     */
+    getUniqueEventsBySelector: (selector = null) => {
+      selector = selector || `[data-${this.options.datasetSelectorName}]`;
+      const elements = document.querySelectorAll(selector);
+      const uniqueEvents = new Set();
+      uniqueEvents.add('click');
+
+      elements.forEach(element => {
+        const event = element.dataset.event;
+        if (event) {
+          uniqueEvents.add(event);
+        }
+      });
+
+      return Array.from(uniqueEvents);
     },
 
 

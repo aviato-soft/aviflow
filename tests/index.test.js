@@ -20,7 +20,7 @@ describe('AviFlow Test Unit', () => {
         let aviflow = new AviFlow(options);
         
         const test = {
-            selector: 'action',
+            datasetSelectorName: 'action',
             url: '#',
             method: 'POST',
             pendingClass: 'pending',
