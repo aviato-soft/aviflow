@@ -39,7 +39,7 @@ class AviFlow {
   constructor(options = {}) {
     // Default configurations
     this.options = {
-      selector: '[data-action="fetch"]',
+      selector: 'action', // flow will search for elements having set: data-action 
       url: '#',
       method: 'POST',
       pendingClass: 'pending',
@@ -79,6 +79,36 @@ class AviFlow {
 
 
   /**
+  * Initializes the event listener on the document body (Event Delegation)
+  * This ensures elements added dynamically via JS later are also covered.
+  */
+  bind() {
+    if (typeof window !== 'undefined') {
+      const selector = `[data-${this.options.selector}="fetch"]`;
+      let event = 'click';
+      let action = 'fetch';
+
+      document.body.addEventListener(event, async (event) => {
+
+        // Find closest element matching selector (handles nested icons/spans inside a button)
+        const triggerElement = event.target.closest(selector);
+
+        if (triggerElement) {
+          action = triggerElement.dataset[this.options.selector];
+
+          if (typeof this.fn[action] === 'function') {
+            event.preventDefault();
+            await this.fn[action](triggerElement);
+          } else {
+            console.error(`Action '${action}' not found in fn.`);
+          }
+        }
+      });
+    }
+  }
+
+
+  /**
    * Execute target.flow on element success
    * @param {} element 
    * WIP:
@@ -95,7 +125,7 @@ class AviFlow {
    *       - data-event = click | element.on.click = ...
    */
   fn = {
-    
+
     /**
      * Fetch event handler invoked after a matching element is clicked.
      * Extracts URL, HTTP method and `data-target` selector from the element's data-attributes,
@@ -184,22 +214,12 @@ class AviFlow {
 
 
   /**
-  * Initializes the event listener on the document body (Event Delegation)
-  * This ensures elements added dynamically via JS later are also covered.
+  * Initializes the library, it is called from constructor
   */
   init() {
-    if ( typeof window !== 'undefined' ) {
-      document.body.addEventListener('click', async (event) => {
+    //reserved space for do actions before bind [...]
 
-        // Find closest element matching selector (handles nested icons/spans inside a button)
-        const triggerElement = event.target.closest(this.options.selector);
-
-        if (triggerElement) {
-          event.preventDefault();
-          await this.fn.fetch(triggerElement);
-        }
-      });
-    }
+    this.bind();
   }
 
 
@@ -290,33 +310,33 @@ class AviFlow {
      * @returns {FormData}
      */
     formData: (element, prefix = 'param', useParentDataset = null) => {
-        if (!element) {
-            return new FormData();
+      if (!element) {
+        return new FormData();
+      }
+
+      let entries = {};
+
+      // Extract Parent Dataset if requested
+      if (element.dataset.parent && useParentDataset !== false) {
+        const parentElement = document.querySelector(element.dataset.parent);
+        if (parentElement) {
+          entries = { ...entries, ...this.tools.formEntries(parentElement, prefix) };
         }
+      }
 
-        let entries = {};
+      // Extract Element Data (Overwrites parent entries)
+      entries = { ...entries, ...this.tools.formEntries(element, prefix) };
 
-        // Extract Parent Dataset if requested
-        if (element.dataset.parent && useParentDataset !== false) {
-            const parentElement = document.querySelector(element.dataset.parent);
-            if (parentElement) {
-                entries = { ...entries, ...this.tools.formEntries(parentElement, prefix) };
-            }
+      const data = new FormData();
+
+      // Single loop to append all merged entries to FormData
+      for (const [key, value] of Object.entries(entries)) {
+        if (value !== undefined && value !== null) {
+          data.append(this.tools.toCamelCase(key), value);
         }
+      }
 
-        // Extract Element Data (Overwrites parent entries)
-        entries = { ...entries, ...this.tools.formEntries(element, prefix) };
-
-        const data = new FormData();
-
-        // Single loop to append all merged entries to FormData
-        for (const [key, value] of Object.entries(entries)) {
-            if (value !== undefined && value !== null) {
-                data.append(this.tools.toCamelCase(key), value);
-            }
-        }
-
-        return data;
+      return data;
     },
 
 
@@ -427,10 +447,10 @@ class AviFlow {
         return result.charAt(0).toLowerCase() + result.slice(1);
       } else {
         // PascalCase
-        return this.tools.toCapitalize(result);        
+        return this.tools.toCapitalize(result);
       }
     },
-    
+
 
     /**
      * Converts a string to PascalCase (capitalizes the first letter and subsequent words).

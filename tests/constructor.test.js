@@ -14,7 +14,7 @@ describe('AviFlow Constructor Test Unit', () => {
     test('Should initialize with default options when no options are provided', () => {
         aviflow = new AviFlow();
         
-        expect(aviflow.options.selector).toBe('[data-action="fetch"]');
+        expect(aviflow.options.selector).toBe('action');
         expect(aviflow.options.url).toBe('#');
         expect(aviflow.options.method).toBe('POST');
         expect(aviflow.options.pendingClass).toBe('pending');
@@ -42,7 +42,7 @@ describe('AviFlow Constructor Test Unit', () => {
         };
         aviflow = new AviFlow(customOptions);
         
-        expect(aviflow.options.selector).toBe('[data-action="fetch"]'); // From default
+        expect(aviflow.options.selector).toBe('action'); // From default
         expect(aviflow.options.url).toBe('/api/merged-url'); // Overridden
         expect(aviflow.options.method).toBe('PUT'); // Overridden
         expect(aviflow.options.pendingClass).toBe('pending'); // From default

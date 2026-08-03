@@ -8,9 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 - Add bind to separate binding from init
 - Add support for custom actions not only fetch
-- Add support for all events not only click using data-event attribute
-- Use shortcut for data-event on data-action using "|" separator (data-action="action[|event]")
-- Add shortcut for data-flow="true" = { data-action="fetch" data-event="click" }
++ Add support for all events not only click using data-event attribute
++ Use shortcut for data-event on data-action using "|" separator (data-action="action[|event]")
++ Add shortcut for data-flow="true" = { data-action="fetch" data-event="click" }
 
 
 ## [1.1.0] - 2026-08-03
