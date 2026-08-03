@@ -31,6 +31,90 @@ var AviFlow = class {
     }
   };
   /**
+   * Execute target.flow on element success
+   * @param {} element 
+   * WIP:
+   *  data-flow = aviflow.fn.controller
+   *  data-event = click | change | ...
+   * 
+   * aviflow.handleFetch -> aviflow.fn.fetch 
+   * 
+   * e.g.
+   *  data-action = fetch 
+   *  => data-action = fetch|click 
+   *     =>
+   *       - data-flow = fetch
+   *       - data-event = click | element.on.click = ...
+   */
+  fn = {
+    /**
+     * Fetch event handler invoked after a matching element is clicked.
+     * Extracts URL, HTTP method and `data-target` selector from the element's data-attributes,
+     * collects form data via `AviFlow.tools#formData`, performs the fetch request,
+     * updates the DOM (if a target container was specified) and dispatches success/error callbacks.
+     */
+    fetch: async (element) => {
+      let data = null;
+      let url = element.dataset.url || element.getAttribute("href") || this.options.url;
+      const method = (element.dataset.method || this.options.method).toUpperCase();
+      const targetSelector = element.dataset.target || false;
+      const originalContent = element.innerHTML;
+      this.tools.setLoadingState(element, true);
+      try {
+        const headers = {
+          "X-Requested-With": "XMLHttpRequest"
+        };
+        const fetchOptions = {
+          headers,
+          method
+        };
+        if (method === "POST" || method === "PUT") {
+          fetchOptions.body = this.tools.formData(element, "param");
+        } else {
+          fetchOptions.headers["Content-Type"] = "application/json; charset=UTF-8";
+        }
+        const response = await fetch(url, fetchOptions);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const contentType = response.headers ? response.headers.get("content-type") : null;
+        if (contentType && contentType.includes("application/json")) {
+          data = await response.json();
+        } else {
+          data = await response.text();
+        }
+        if (targetSelector) {
+          const targetContainer = document.querySelector(targetSelector);
+          if (targetContainer) {
+            if (typeof data === "object") {
+              if (data.html && typeof data.html === "string") {
+                targetContainer.innerHTML = data.html;
+              } else {
+                targetContainer.textContent = JSON.stringify(data);
+              }
+            } else {
+              targetContainer.innerHTML = data;
+            }
+          }
+        }
+        if (element.dataset.onSuccess) {
+          this.tools.executeCallback(element, "onSuccess", data, element);
+        } else {
+          this.on.success(data, element);
+        }
+      } catch (error) {
+        if (element.dataset.onError) {
+          this.tools.executeCallback(element, "onError", data, element, error);
+        } else {
+          this.on.error(data, element, error);
+        }
+      } finally {
+        this.tools.setLoadingState(element, false, originalContent);
+      }
+      return data;
+    }
+  };
+  /**
   * Initializes the event listener on the document body (Event Delegation)
   * This ensures elements added dynamically via JS later are also covered.
   */
@@ -40,16 +124,11 @@ var AviFlow = class {
         const triggerElement = event.target.closest(this.options.selector);
         if (triggerElement) {
           event.preventDefault();
-          await this.handleFetch(triggerElement);
+          await this.fn.fetch(triggerElement);
         }
       });
     }
   }
-  /**
-   * 
-   * 
-   */
-  fn = {};
   /**
    * Integrated tools.
    */
@@ -246,93 +325,6 @@ var AviFlow = class {
       return trimText.charAt(0).toUpperCase() + trimText.slice(1);
     }
   };
-  /**
-   * Execute target.flow on element success
-   * @param {} element 
-   * WIP:
-   *  data-flow = aviflow.fn.controller
-   *  data-event = click | change | ...
-   * 
-   * aviflow.handleFetch -> aviflow.fn.fetch 
-   * 
-   * e.g.
-   *  data-action = fetch 
-   *  => data-action = fetch|click 
-   *     =>
-   *       - data-flow = fetch
-   *       - data-event = click | element.on.click = ...
-   *
-  fn: {
-    async fetch(element) {
-    },
-  }
-   */
-  /**
-   * Fetch event handler invoked after a matching element is clicked.
-   * Extracts URL, HTTP method and `data-target` selector from the element's data-attributes,
-   * collects form data via {@linkcode AviFlow.tools#formData}, performs the fetch request,
-   * updates the DOM (if a target container was specified) and dispatches success/error callbacks.
-   */
-  async handleFetch(element) {
-    let data = null;
-    let url = element.dataset.url || element.getAttribute("href") || this.options.url;
-    const method = (element.dataset.method || this.options.method).toUpperCase();
-    const targetSelector = element.dataset.target || false;
-    const originalContent = element.innerHTML;
-    this.tools.setLoadingState(element, true);
-    try {
-      const headers = {
-        "X-Requested-With": "XMLHttpRequest"
-      };
-      const fetchOptions = {
-        headers,
-        method
-      };
-      if (method === "POST" || method === "PUT") {
-        fetchOptions.body = this.tools.formData(element, "param");
-      } else {
-        fetchOptions.headers["Content-Type"] = "application/json; charset=UTF-8";
-      }
-      const response = await fetch(url, fetchOptions);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const contentType = response.headers ? response.headers.get("content-type") : null;
-      if (contentType && contentType.includes("application/json")) {
-        data = await response.json();
-      } else {
-        data = await response.text();
-      }
-      if (targetSelector) {
-        const targetContainer = document.querySelector(targetSelector);
-        if (targetContainer) {
-          if (typeof data === "object") {
-            if (data.html && typeof data.html === "string") {
-              targetContainer.innerHTML = data.html;
-            } else {
-              targetContainer.textContent = JSON.stringify(data);
-            }
-          } else {
-            targetContainer.innerHTML = data;
-          }
-        }
-      }
-      if (element.dataset.onSuccess) {
-        this.tools.executeCallback(element, "onSuccess", data, element);
-      } else {
-        this.on.success(data, element);
-      }
-    } catch (error) {
-      if (element.dataset.onError) {
-        this.tools.executeCallback(element, "onError", data, element, error);
-      } else {
-        this.on.error(data, element, error);
-      }
-    } finally {
-      this.tools.setLoadingState(element, false, originalContent);
-    }
-    return data;
-  }
 };
 if (typeof window !== "undefined") {
   window.AviFlow = AviFlow;

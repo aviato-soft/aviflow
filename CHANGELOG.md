@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- Add bind to separate binding from init
+- Add support for custom actions not only fetch
+- Add support for all events not only click using data-event attribute
+- Use shortcut for data-event on data-action using "|" separator (data-action="action[|event]")
+- Add shortcut for data-flow="true" = { data-action="fetch" data-event="click" }
+
+
+## [1.1.0] - 2026-08-03
 ### Changed
 - Refactoring hanldeFetch - move it to: fn.fetch
 
@@ -16,15 +24,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - This CHANGELOG file to hopefully serve as an evolving example of a standardized open source project CHANGELOG.
 - data-parent property for element
 - tools.toPascalCase
-- fn property - will be use on next release
+- fn property - will be use on next releases
 
 ### Fixed
 - remove words lower case format for tools.toCamelCase
 - description for tools.toCapitalize
 
 
-
 ## [1.0.0] - 2026-07-30
+- 1st release
 
 [^guidenote]: 
 ### Guiding Principles

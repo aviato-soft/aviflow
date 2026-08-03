@@ -27,7 +27,7 @@ describe('AviFlow Init Test Unit', () => {
         // Verification: fetch should NOT be called when clicking the body
         expect(mock.fetch).not.toHaveBeenCalled();
     });
-
+    
     
     test('Simple test with no elements suitable for flow', async () => {
         const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => { });
@@ -60,4 +60,5 @@ describe('AviFlow Init Test Unit', () => {
         // Assert fetch was invoked with correct parameters
         expect(mock.fetch).toHaveBeenCalledWith(mock.url.json, expect.any(Object));
     });
+
 });

@@ -74,7 +74,7 @@
     </script>
 
     <!-- Library script -->
-    <script src="../../src/index.js"></script>
+    <script src="../../dist/aviflow.min.js"></script>
     
     <!-- Page data-->
     <script src="./data-cards.js"></script>
@@ -89,8 +89,8 @@
             avi.on.success = (data, element) => { console.log('[OK]', data, element); };
             avi.on.error = (data, element, error) => { console.error('[ERR]', data, element, error); };
 
-            aviFnSuccess = (data, element) => { 
-                alert('it works fine!'); 
+            aviFnSuccess = (data, element) => {
+                alert('it works fine!');
                 console.log(data)
             };
 
