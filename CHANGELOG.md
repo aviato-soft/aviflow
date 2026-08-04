@@ -7,31 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- Add bind to separate binding from init
-- Add support for custom actions not only fetch
-- Add support for all events not only click using data-event attribute
-+ Use shortcut for data-event on data-action using "|" separator (data-action="action[|event]")
-+ Add shortcut for data-flow="true" = { data-action="fetch" data-event="click" }
++ Add more examples
++ Add tutorial:
+    1. load
+    2. create fn.action
+    3. set data-event to trigger fn.action
+    4. set data-target to watch the execution
 
 ### Changed
-- AviFlow.options.selector became depricated and removed = use datasetSelectorName instead
-- AviFlow.options.datasetSelectorName represent the dataset selector not css selector
++ Change examples UI
+
+
+## [1.1.1] - 2026-08-04
+### Added
+- Add bind to separate binding from init
+- Add support for custom actions (not only fetch)
+- Add support for all events (not only click) using the data-event attribute
+- Use shortcut for data-event on data-action using "|" separator (data-action="action[|event]")
+
+### Changed
+- AviFlow.options.selector has been deprecated and removed. Use datasetSelectorName instead.
+- AviFlow.options.datasetSelectorName represents the dataset selector, not a CSS selector.
 
 ### Fixed
-- For each bind a multiple event was set, now we have only one call per event
+- Fixed an issue where multiple events were set for each bind; now there is only one call per event.
+
 
 ## [1.1.0] - 2026-08-03
 ### Changed
-- Refactoring hanldeFetch - move it to: fn.fetch
+- Refactoring handleFetch - moved it to: fn.fetch
 
 
 ## [1.0.1] - 2026-07-31
 
 ### Added
-- This CHANGELOG file to hopefully serve as an evolving example of a standardized open source project CHANGELOG.
+- Added this CHANGELOG file to serve as an evolving example of a standardized open-source project CHANGELOG.
 - data-parent property for element
 - tools.toPascalCase
-- fn property - will be use on next releases
+- fn property - will be used in next releases
 
 ### Fixed
 - remove words lower case format for tools.toCamelCase

@@ -1,38 +1,44 @@
 /**
- * AviFlow - Modern, lightweight JavaScript class to automate fetch requests
- * natively using HTML data-attributes.
+ * AviFlow: A modern, lightweight JavaScript class designed to automate fetch requests
+ * using native HTML data-attributes.
  *
- * Supported data-attributes on triggered elements:
- * @param [data-action="fetch"] 
- *  Mandatory for selecting the object click trigger.
- *  
- * @param [data-url] 
- *  The URL to fetch. Falls back to the element's `href` if not set.
- *  Optional attribute – if missing, page url is used.
- *  
- * @param [data-method] 
- *  HTTP method (e.g., GET, POST). 
- *  Defaults to `'POST'`.
- *  
- * @param [data-target] 
- *  CSS selector of a container whose innerHTML will be replaced with the response.
- *  If JSON content-type is returned it is `JSON.stringify()`d before insertion.
+ * Supported data attributes on triggered elements:
+ *
+ * @param {string} [data-action="fn[|event]"] 
+ *   Required to specify the function to be executed.
+ *   The second parameter is an optional shortcut for `data-event`.
  * 
- * @param [data-param-*] 
- *  A collection of data-attributes prefixed `data-param-*`.
- *  All attributes are collected into a FormData object via `tools.formData(element)`
- *  and sent as the request body for non-GET methods.
- *  The `*` is replaced with the attribute name (e.g. `action`, `body`).
+ * @param {string} [data-event="click"] 
+ *   Optional attribute that specifies the event triggering the action defined in `data-action`.
  * 
- * @param [data-parent]
- *  Get the parameters from parent.
- *  Trigger parameters will overwrite the parent parameters having same name.
- *  
- * @param [data-on-error]
- *  function to be called on error
- *  
- * @param [data-on-success]
- *  function to be called on success
+ * @param {string} [data-url]
+ *   The URL to fetch. Falls back to the element's `href` if not provided.
+ *   If this attribute is missing, the current page URL is used.
+ * 
+ * @param {string} [data-method] 
+ *   The HTTP method (e.g., `GET`, `POST`).
+ *   Defaults to `'POST'`.
+ * 
+ * @param {string} [data-target]
+ *   A CSS selector for a container whose `innerHTML` will be replaced by the response.
+ *   If the response content-type is JSON, the response data is stringified before insertion.
+ * 
+ * @param {string} [data-param-*] 
+ *   A collection of data-attributes prefixed `data-param-*`.
+ *   All matching attributes are aggregated into a `FormData` object using `tools.formData(element)`
+ *   and sent as the request body for non-GET methods.
+ *   The `*` is replaced by the attribute name (e.g., `action`, `body`).
+ * 
+ * @param {string} [data-parent] 
+ *   A CSS selector pointing to a parent container.
+ *   Parameters from the parent container are collected and merged. 
+ *   Trigger parameters will overwrite parent parameters with the same name.
+ * 
+ * @param {function} [data-on-error] 
+ *   The callback function executed upon request failure.
+ * 
+ * @param {function} [data-on-success] 
+ *   The callback function executed upon successful request completion.
  */
 class AviFlow {
 
@@ -57,51 +63,47 @@ class AviFlow {
 
 
   /**
-   * Default fallback hooks that also dispatch standard CustomEvents 
-   * so other parts of your app can listen cleanly.
+   * Default fallback hooks that also dispatch standard CustomEvents
+   * so other parts of your application can listen for events.
    */
   default = {
 
-    error: function (data, element, error) {
-      // console.error({ element, error, data });
-      const event = new CustomEvent('aviflow:error', { bubbles: true, detail: data });
-      if (error !== undefined) {
-        event.error = error;
+      error: function (data, element, error) {
+        const event = new CustomEvent('aviflow:error', { bubbles: true, detail: data });
+        if (error !== undefined) {
+          event.error = error;
+        }
+        element.dispatchEvent(event);
+      },
+
+      success: function (data, element) {
+        element.dispatchEvent(new CustomEvent('aviflow:success', { bubbles: true, detail: data }));
       }
-      element.dispatchEvent(event);
-    },
-
-    success: function (data, element) {
-      // console.log('AviFlow success:', data);
-      element.dispatchEvent(new CustomEvent('aviflow:success', { bubbles: true, detail: data }));
     }
-  }
-
 
   /**
-  * Initializes event listeners for data-action elements, supporting both static and dynamic elements
-  * by using a MutationObserver for event delegation on new elements.
+  * Initializes event listeners for `data-action` elements, supporting both static and dynamic elements.
+  * It utilizes a MutationObserver pattern for event delegation on dynamically added elements.
+  * @returns {void}
   */
   bind() {
     if (typeof window === 'undefined') return;
 
     const selector = `[data-${this.options.datasetSelectorName}]`;
 
-
-    // Use tools to get all possible events (including 'click' and events specified in data-event)
+    // Retrieve all possible events (including 'click' and events specified in `data-event`)
     const eventTriggered = this.tools.getUniqueEventsBySelector(selector);
 
-    // Cleanup: Remove listeners for all currently bound events
+    // Cleanup: Remove existing listeners for all currently bound events
     if (this._AviFlowActionHandler) {
       eventTriggered.forEach(event => {
         document.body.removeEventListener(event, this._AviFlowActionHandler);
       });
     }
 
-
-    // Define the handler and assign it to 'this._actionHandler' for persistence across bind() calls
+    // Define the handler and assign it to `this._AviFlowActionHandler` for persistence across `bind()` calls
     this._AviFlowActionHandler = async (event) => {
-      // Find closest element matching selector (handles nested icons/spans inside a button)
+      // Find the closest element matching the selector (e.g., handling nested icons/spans inside a button)
       const element = event.target.closest(selector);
 
       if (element) {
@@ -114,8 +116,7 @@ class AviFlow {
       }
     };
 
-
-    // Bind for all determined events
+    // Bind the handler for all determined events
     eventTriggered.forEach(event => {
       document.body.addEventListener(event, this._AviFlowActionHandler);
     });
@@ -123,28 +124,19 @@ class AviFlow {
 
 
   /**
-   * Execute target.flow on element success
-   * @param {} element 
-   * WIP:
-   *  data-flow = aviflow.fn.controller
-   *  data-event = click | change | ...
-   * 
-   * aviflow.handleFetch -> aviflow.fn.fetch 
-   * 
-   * e.g.
-   *  data-action = fetch 
-   *  => data-action = fetch|click 
-   *     =>
-   *       - data-flow = fetch
-   *       - data-event = click | element.on.click = ...
+   * The place for flow controllers
    */
   fn = {
 
     /**
-     * Fetch event handler invoked after a matching element is clicked.
-     * Extracts URL, HTTP method and `data-target` selector from the element's data-attributes,
-     * collects form data via `AviFlow.tools#formData`, performs the fetch request,
-     * updates the DOM (if a target container was specified) and dispatches success/error callbacks.
+     * Fetch event handler invoked after a matching element is triggered.
+     *
+     * It extracts the URL and HTTP method from the element's data-attributes,
+     * collects form data via `AviFlow.tools#formData`, executes the fetch request,
+     * updates the DOM (if a `data-target` is specified), and dispatches success or error callbacks.
+     *
+     * @param {HTMLElement} element The triggered element.
+     * @returns {Promise<any>} The response data.
      */
     fetch: async (element) => {
       let data = null;
@@ -169,6 +161,8 @@ class AviFlow {
         if (method === 'POST' || method === 'PUT') {
           fetchOptions.body = this.tools.formData(element, 'param');
         } else {
+          // For non-POST/PUT methods, typically content-type is handled by the server,
+          // but we specify it for compatibility if needed.
           fetchOptions.headers['Content-Type'] = 'application/json; charset=UTF-8';
         }
 
@@ -178,7 +172,7 @@ class AviFlow {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        // Handle response depending on content-type header
+        // Handle response based on content-type header
         const contentType = response.headers ? response.headers.get('content-type') : null;
 
         if (contentType && contentType.includes('application/json')) {
@@ -187,7 +181,7 @@ class AviFlow {
           data = await response.text();
         }
 
-        // Render automatically if data-target is provided
+        // Render automatically if `data-target` is provided
         if (targetSelector) {
           const targetContainer = document.querySelector(targetSelector);
 
@@ -204,7 +198,7 @@ class AviFlow {
           }
         }
 
-        // If inline callback is present, execute it and ignore custom or default success callback
+        // Execute inline callback if present, otherwise use default success callback
         if (element.dataset.onSuccess) {
           this.tools.executeCallback(element, 'onSuccess', data, element);
         } else {
@@ -212,7 +206,7 @@ class AviFlow {
         }
 
       } catch (error) {
-        // If inline callback is present, execute it and ignore custom or default error callback
+        // Execute inline callback if present, otherwise use default error callback
         if (element.dataset.onError) {
           this.tools.executeCallback(element, 'onError', data, element, error);
         } else {
@@ -228,11 +222,11 @@ class AviFlow {
 
 
   /**
-  * Initializes the library, it is called from constructor
-  */
+   * Initializes the library, invoked from the `constructor`.
+   * @returns {void}
+   */
   init() {
-    //reserved space for do actions before bind [...]
-
+    this.tools.setDataEventsFromDataAction();
     this.bind();
   }
 
@@ -458,6 +452,39 @@ class AviFlow {
         element.style.opacity = '';
         element.style.pointerEvents = '';
       }
+    },
+
+
+    /**
+     * Logic to split data-action and set data-event
+     */
+    setDataEventsFromDataAction: () => {
+      if (typeof window === 'undefined') return;
+
+      // Select all elements with data-action
+      const actionElements = document.querySelectorAll('[data-action]');
+
+      // Iterate through them
+      actionElements.forEach(element => {
+        const actionValue = element.dataset.action;
+
+        // Check if it contains "|"
+        if (actionValue && actionValue.includes('|')) {
+          // Split into two parts
+          const parts = actionValue.split('|');
+          const newAction = parts[0];
+          const newEvent = parts[1];
+
+          // Update data-action
+          element.dataset.action = newAction;
+
+          // Set data-event if it doesn't exist
+          // Check if data-event is missing or null
+          if (!element.dataset.event) {
+            element.dataset.event = newEvent;
+          }
+        }
+      });
     },
 
 
