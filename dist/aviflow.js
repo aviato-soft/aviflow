@@ -2,7 +2,8 @@
 var AviFlow = class {
   constructor(options = {}) {
     this.options = {
-      selector: '[data-action="fetch"]',
+      datasetSelectorName: "action",
+      // flow will search for elements having set: data-action 
       url: "#",
       method: "POST",
       pendingClass: "pending",
@@ -15,8 +16,8 @@ var AviFlow = class {
     this.init();
   }
   /**
-   * Default fallback hooks that also dispatch standard CustomEvents 
-   * so other parts of your app can listen cleanly.
+   * Default fallback hooks that also dispatch standard CustomEvents
+   * so other parts of your application can listen for events.
    */
   default = {
     error: function(data, element, error) {
@@ -31,27 +32,46 @@ var AviFlow = class {
     }
   };
   /**
-   * Execute target.flow on element success
-   * @param {} element 
-   * WIP:
-   *  data-flow = aviflow.fn.controller
-   *  data-event = click | change | ...
-   * 
-   * aviflow.handleFetch -> aviflow.fn.fetch 
-   * 
-   * e.g.
-   *  data-action = fetch 
-   *  => data-action = fetch|click 
-   *     =>
-   *       - data-flow = fetch
-   *       - data-event = click | element.on.click = ...
+  * Initializes event listeners for `data-action` elements, supporting both static and dynamic elements.
+  * It utilizes a MutationObserver pattern for event delegation on dynamically added elements.
+  * @returns {void}
+  */
+  bind() {
+    if (typeof window === "undefined") return;
+    const selector = `[data-${this.options.datasetSelectorName}]`;
+    const eventTriggered = this.tools.getUniqueEventsBySelector(selector);
+    if (this._AviFlowActionHandler) {
+      eventTriggered.forEach((event) => {
+        document.body.removeEventListener(event, this._AviFlowActionHandler);
+      });
+    }
+    this._AviFlowActionHandler = async (event) => {
+      const element = event.target.closest(selector);
+      if (element) {
+        const action = element.dataset[this.options.datasetSelectorName];
+        if (typeof this.fn[action] === "function") {
+          event.preventDefault();
+          await this.fn[action](element);
+        }
+      }
+    };
+    eventTriggered.forEach((event) => {
+      document.body.addEventListener(event, this._AviFlowActionHandler);
+    });
+  }
+  /**
+   * The place for flow controllers
    */
   fn = {
     /**
-     * Fetch event handler invoked after a matching element is clicked.
-     * Extracts URL, HTTP method and `data-target` selector from the element's data-attributes,
-     * collects form data via `AviFlow.tools#formData`, performs the fetch request,
-     * updates the DOM (if a target container was specified) and dispatches success/error callbacks.
+     * Fetch event handler invoked after a matching element is triggered.
+     *
+     * It extracts the URL and HTTP method from the element's data-attributes,
+     * collects form data via `AviFlow.tools#formData`, executes the fetch request,
+     * updates the DOM (if a `data-target` is specified), and dispatches success or error callbacks.
+     *
+     * @param {HTMLElement} element The triggered element.
+     * @returns {Promise<any>} The response data.
      */
     fetch: async (element) => {
       let data = null;
@@ -115,19 +135,12 @@ var AviFlow = class {
     }
   };
   /**
-  * Initializes the event listener on the document body (Event Delegation)
-  * This ensures elements added dynamically via JS later are also covered.
-  */
+   * Initializes the library, invoked from the `constructor`.
+   * @returns {void}
+   */
   init() {
-    if (typeof window !== "undefined") {
-      document.body.addEventListener("click", async (event) => {
-        const triggerElement = event.target.closest(this.options.selector);
-        if (triggerElement) {
-          event.preventDefault();
-          await this.fn.fetch(triggerElement);
-        }
-      });
-    }
+    this.tools.setDataEventsFromDataAction();
+    this.bind();
   }
   /**
    * Integrated tools.
@@ -245,6 +258,26 @@ var AviFlow = class {
       return {};
     },
     /**
+     * Finds all unique event types defined in the 'data-event' attribute for elements matching the given selector.
+     * Defaults to the selector configured in `options.datasetSelectorName`.
+     *
+     * @param {string | null} [selector] The data- selector to query. Default is '[data-action]'
+     * @returns {string[]} An array of unique event names.
+     */
+    getUniqueEventsBySelector: (selector = null) => {
+      selector = selector || `[data-${this.options.datasetSelectorName}]`;
+      const elements = document.querySelectorAll(selector);
+      const uniqueEvents = /* @__PURE__ */ new Set();
+      uniqueEvents.add("click");
+      elements.forEach((element) => {
+        const event = element.dataset.event;
+        if (event) {
+          uniqueEvents.add(event);
+        }
+      });
+      return Array.from(uniqueEvents);
+    },
+    /**
      * Returns `true` if the given value is a non-null, empty plain object.
      *
      * @param {*} o   The value to check (or `null`).
@@ -284,6 +317,25 @@ var AviFlow = class {
         element.style.opacity = "";
         element.style.pointerEvents = "";
       }
+    },
+    /**
+     * Logic to split data-action and set data-event
+     */
+    setDataEventsFromDataAction: () => {
+      if (typeof window === "undefined") return;
+      const actionElements = document.querySelectorAll("[data-action]");
+      actionElements.forEach((element) => {
+        const actionValue = element.dataset.action;
+        if (actionValue && actionValue.includes("|")) {
+          const parts = actionValue.split("|");
+          const newAction = parts[0];
+          const newEvent = parts[1];
+          element.dataset.action = newAction;
+          if (!element.dataset.event) {
+            element.dataset.event = newEvent;
+          }
+        }
+      });
     },
     /**
      * Converts a string to camelCase.  Non-string inputs return an empty string.
