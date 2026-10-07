@@ -50,7 +50,6 @@ var AviFlow = class {
       if (element) {
         const action = element.dataset[this.options.datasetSelectorName];
         if (typeof this.fn[action] === "function") {
-          event.preventDefault();
           await this.fn[action](element);
         }
       }
@@ -168,10 +167,14 @@ var AviFlow = class {
         }
         if (typeof func === "function") {
           func.apply(element, args);
-        } else {
-          const fn = new Function("data", "element", "error", callbackStr);
-          fn.apply(element, args);
+          return;
         }
+        if (this.fn[callbackStr] && typeof this.fn[callbackStr] === "function") {
+          this.fn[callbackStr].apply(element, args);
+          return;
+        }
+        const fn = new Function("data", "element", "error", callbackStr);
+        fn.apply(element, args);
       } catch (e) {
         return e;
       }

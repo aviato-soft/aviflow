@@ -1,0 +1,151 @@
+<html lang="en">
+<head>
+  <title>AviFlow - Test examples  - from readme</title>
+  <script src="./../../dist/aviflow.min.js"></script>
+  <style>
+    body {
+      background-color: #1e1e1e;
+      color: #e0e0e0;
+      font-family: sans-serif;
+      line-height: 1.6;
+      padding: 20px;
+    }
+
+    h1, h2, h3, h4 {
+      color: #ffffff;
+    }
+
+    hr {
+      border-color: #333;
+    }
+
+    /* Styling for code blocks */
+    pre {
+      background-color: #2c2c2c;
+      border-radius: 8px;
+      padding: 15px;
+      margin: 20px 0;
+      overflow-x: auto;
+      border: 1px solid #333;
+    }
+
+    .result {
+      padding: 15px;
+      margin: 20px 0;
+      overflow-x: auto;
+      border: 1px solid #333;
+    }
+
+    code {
+      font-family: monospace;
+      color: #dcdcdc;
+    }
+
+    button, a {
+      padding: 8px 16px;
+      background-color: #34495e;
+      color: #ecf0f1;
+      border: 1px solid #2c3e50;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button:hover, a:hover {
+      background-color: #4a6584;
+    }
+  </style>
+</head>
+<body>
+<h1 class="title">AviFlow by Aviato Soft</h1>
+<h2 class="section-title">HTML API Usage</h2>
+<hr>
+
+<h3 class="subsection">Example 1: Function Execution on Click</h3>
+<p>Use a custom function defined on the AviFlow instance to execute arbitrary JavaScript code when an element with a specific `data-action` is clicked.</p>
+<!-- HTML Source Code Example -->
+<pre>
+&lt;button data-action="clickTest"&gt;Click me&lt;/button&gt;
+&lt;script&gt;
+const myFlow = new AviFlow();
+myFlow.fn.clickTest = () => {
+  alert('It works!');
+};
+myFlow.init();
+&lt;/script&gt;
+</pre>
+
+<!-- EXAMPLE #1.Function Execution on Click -->
+<button data-action="clickTest">Click me</button>
+<script>
+const myFlow = new AviFlow();
+myFlow.fn.clickTest = () => {
+  alert('It works!');
+};
+
+myFlow.init();
+</script>
+<!-- /EXAMPE #1 -->
+<hr>
+
+<h3 class="subsection">Example 2: Simple GET Request (Content Injection)</h3>
+<p>Simply apply data-action="fetch" to any interactive HTML element.<br>
+Fetch data from an API and automatically inject the response text/HTML directly into another DOM container using data-target.
+</p>
+<pre>
+&lt;button
+  data-action="fetch"
+  data-method="get"
+  data-url="https://jsonplaceholder.typicode.com/users/1"
+  data-target="#result-box"&gt;
+  Load User Info
+&lt;/button&gt;
+
+&lt;div id=&quot;result-box&quot;&gt;Profile data will render here...&lt;/div&gt;
+</pre>
+
+<!-- Example #2: Simple GET Request (Content Injection) -->
+<button 
+  data-action="fetch"
+  data-method="get"
+  data-url="https://jsonplaceholder.typicode.com/users/1" 
+  data-target="#result-box">
+  Load User Info
+</button>
+
+<div id="result-box" class="result">Profile data will render here...</div>
+<!-- /EXAMPE #2 -->
+<hr>
+
+<h3 class="subsection">Example 3: Interactive POST Request with Payload</h3>
+<p>Use standard attributes to pass customized HTTP methods and structured JSON payloads.</p>
+<pre>
+&lt;a href="javascript:;"
+   data-action="fetch"
+   data-method="POST"
+   data-url="https://jsonplaceholder.typicode.com/users"
+   data-param-id="11"
+   data-param-test="AviFlow is fast."
+   data-target="#response-log"&gt;
+   Submit Post
+&lt;/a&gt;
+
+&lt;div id="response-log"&gt;The result of example #3 will be rendered here...&lt;/div&gt;
+</pre>
+
+<!-- EXAMPLE #3 Interactive POST Request with Payload -->
+<a href="javascript:;" 
+   data-action="fetch" 
+   data-method="POST" 
+   data-url="https://jsonplaceholder.typicode.com/users"
+   data-param-id="11"
+   data-param-test="AviFlow is fast."
+   data-target="#response-log">
+   Submit Post
+</a>
+
+<div id="response-log" class="result">The result of example #3 will be rendered here...</div>
+<!-- /EXAMPE #3 -->
+ <hr>
+</body>
+</html>
