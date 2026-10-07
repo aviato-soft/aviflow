@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [WIP]
 ### Added
 + Add more examples
 + Add tutorial:
@@ -16,6 +16,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 + Change examples UI
+
+
+## [Unreleased]
+
+## [1.1.5] - 2026-10-07T08:17:21Z
+
+## [1.1.4] - 2026-10-07T08:15:46Z
+
+## [1.1.3] - 2026-10-07T08:14:48Z
+
+## [1.1.2] - 2026-10-07T08:12:26Z
+### Added
+- jsDelivr link to readme
+- automatic version deployments
+- standard callbacks (success, error) can be defined as .fn.function
+
+### Fixed
+ - Prevent event trigger for .fn.functions is act to unexpected elements behavior - it is removed - not needed
 
 
 ## [1.1.1] - 2026-08-04

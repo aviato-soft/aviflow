@@ -5,6 +5,6 @@
 node_modules/*
 tests/.coverage
 .npmrc
+deploy
 package.json
 SYSTEM.md
-
