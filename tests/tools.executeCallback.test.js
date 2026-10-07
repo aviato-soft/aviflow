@@ -77,4 +77,18 @@ describe('AviFlow Tools / executeCallback Test Unit', () => {
         
         expect(errResult).toBeInstanceOf(TypeError);
     });
+    
+    test('calls aviflow function when defined on the aviflow object', () => {
+        // Overwrite data-on-success with the specific function name
+        mock.element.button.test.setAttribute('data-on-success', 'successFnCall');
+
+        // Define the function on aviflow.fn
+        aviflow.fn.successFnCall = jest.fn();
+
+        // Execute the callback
+        aviflow.tools.executeCallback(mock.element.button.test, 'onSuccess');
+
+        // Assert that the function was called
+        expect(aviflow.fn.successFnCall).toHaveBeenCalled();
+    });
 })
