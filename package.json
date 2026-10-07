@@ -2,7 +2,10 @@
   "name": "aviflow",
   "version": "1.1.2",
   "description": "A lightweight, dependency-free JavaScript utility to automate fetch requests using native HTML data-attributes.",
-  "repository.url": "https://github.com/aviato-soft/aviflow",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aviato-soft/aviflow"
+  },
   "type": "module",
   "exports": {
     ".": {
