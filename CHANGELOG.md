@@ -19,14 +19,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
-
-## [1.1.5] - 2026-10-07T08:17:21Z
-
-## [1.1.4] - 2026-10-07T08:15:46Z
-
-## [1.1.3] - 2026-10-07T08:14:48Z
-
-## [1.1.2] - 2026-10-07T08:12:26Z
 ### Added
 - jsDelivr link to readme
 - automatic version deployments

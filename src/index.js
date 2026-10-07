@@ -110,7 +110,7 @@ class AviFlow {
         const action = element.dataset[this.options.datasetSelectorName];
 
         if (typeof this.fn[action] === 'function') {
-          event.preventDefault();
+          //event.preventDefault();
           await this.fn[action](element);
         }
       }
@@ -261,11 +261,18 @@ class AviFlow {
 
         if (typeof func === 'function') {
           func.apply(element, args);
-        } else {
-          // Otherwise, evaluate it as code. Pass arguments named after their purpose.
-          const fn = new Function('data', 'element', 'error', callbackStr);
-          fn.apply(element, args);
+          return;
         }
+
+        if (this.fn[callbackStr] && typeof this.fn[callbackStr] === 'function') {
+          this.fn[callbackStr].apply(element, args);
+          return;
+        }
+        
+        // Otherwise, evaluate it as code. Pass arguments named after their purpose.
+        const fn = new Function('data', 'element', 'error', callbackStr);
+        fn.apply(element, args);
+        
       } catch (e) {
         //console.error(`Error executing AviFlow callback for ${attrName}:`, e);
         return e;
