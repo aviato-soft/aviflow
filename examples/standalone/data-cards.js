@@ -47,18 +47,30 @@ const dataCards = [
     data-url='data:application/json;charset=utf-8,{"success":true,"html":"okay!"}'
     >Click to Fetch</button>`,
         targetId: "target-event-success-fn",
-        usageNote: ''
+        usageNote: '[...]'
     },
     {
         title: "Events handler: Success (call)",
-        action: `<button 
+        action: `<button
     data-action="fetch"
-    data-on-success="aviFnSuccess"
+    data-on-success="success"
     data-target="#target-event-success-call"
     data-url='data:application/json;charset=utf-8,{"success":true,"html":"okay!"}'
     >Click to Fetch</button>`,
         targetId: "target-event-success-call",
-        usageNote: ''
+        usageNote: '[...]'
+    },
+    {
+        title: "Event Handler: Checkbox Change",
+        action: `<input 
+    data-action="testHandleCheckChange" 
+    data-event="change"
+    data-target="#target-checkbox-event"
+    id="testCheckbox"
+    type="checkbox">
+    <label for="testCheckbox">Click to toggle</label>`,
+        targetId: "target-checkbox-event",
+        usageNote: `Demonstrates handling native DOM events, specifically the 'change' event on an input element. The AviFlow mechanism captures the event and invokes the specified handler function with the current state of the input.`
     }
 /*
     {
