@@ -28,6 +28,9 @@ update() {
         git checkout dev || { echo "Error switching to dev branch."; exit 1; }
     fi
 
+    ~/apps/scripts/npm run build
+    ~/apps/scripts/npm run test
+
     update_version
 
     # Update package.json
@@ -57,13 +60,13 @@ update() {
     case "$publish" in
         [Yy]* )
             echo "Publishing to npm..."
-            npm publish
+            ~/apps/scripts/npm publish
             ;;
         * )
             echo "npm publish skipped by user."
             ;;
     esac
-    }
+}
 
 
 call_update() {
