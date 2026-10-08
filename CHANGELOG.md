@@ -20,7 +20,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
- - README.md - status badges
+- Status section on README.md
+- Badge on status section: jsdelivr
+- Badge on status section: npm version
+- Badge on status section: codecov coverage
+
+### Changed
+- Use sha512 for integrity check
+
 
 ## [1.1.2] - 2026-10-07T10:35:43Z
 ### Added
