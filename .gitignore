@@ -6,5 +6,7 @@ node_modules/*
 tests/.coverage
 .npmrc
 deploy
+deploy.prop
+deploy-lib.sh
 package.json
 SYSTEM.md
