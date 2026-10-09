@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.3] - 2026-10-09T10:06:11Z
+
 ## [1.1.3] - 2026-10-09T10:03:34Z
 ### Added
 - if data-parent is a form, all elements values are send to fetch action automatically
