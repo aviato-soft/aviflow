@@ -32,7 +32,7 @@ You can reference `dist/aviflow.min.js` locally or load it directly from jsDeliv
 
 **Using jsDelivr CDN:**
 ```html
-<script src="https://cdn.jsdelivr.net/npm/aviflow@1.1.2/dist/aviflow.min.js" crossorigin="anonymous" integrity="sha512-lbKl/qombFZKC5UZl5p/NCb1z9XnJnCR/gUKWDNt51PTnfEsgrQ0tmLEzcew2LkFhH6naxZmfp+TEUL4VzwfyA=="></script>
+<script src="https://cdn.jsdelivr.net/npm/aviflow@1.1.3/dist/aviflow.min.js" crossorigin="anonymous" integrity="sha512-svhkJwM1Yhx4Hv1k+epOBd9Q7aR08jv2zPuLG4SY7R66v7cvWMnTCSRFpWhPmf8jszsz0wCzyPGVndRbdegW0A=="></script>
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     new AviFlow();
