@@ -1,0 +1,42 @@
+version: 2
+
+# Ignore all files and directories except those inside 'src' and 'dist'
+projectIgnorePaths:
+  - "/*"
+  - "!/src"
+  - "!/src/**"
+  - "!/dist"
+  - "!/dist/**"
+
+# Only trigger Pull Request alert reports when modified files are in 'src' or 'dist'
+triggerPaths:
+  - "/src/**"
+  - "/dist/**"
+
+githubApp:
+  enabled: true
+  dependencyOverviewEnabled: true     # Generate a detailed summary of added/changed packages
+  disableCommentsAndCheckRuns: false  # Force checks to render as GitHub status indicators
+  ignoreUsers: []                     # Do NOT ignore any users or bots to prevent bypasses
+  projectReportsEnabled: true         # Generate full commit status reports
+  pullRequestAlertsEnabled: true      # Block or alert on dangerous PR dependencies
+
+
+issueRules:
+  didYouMean: true
+  environmentVars: true       # Alert when packages read sensitive environment variables/secrets
+  gitDependency: true
+  hasNativeCode: true
+  httpDependency: true
+  installScripts: true       # Flag packages running pre/postinstall shell scripts
+  invalidPackageJSON: true
+  knownMalware: true          # Flag packages identified as malicious code
+  malware: true
+  networkAccess: true         # Alert when packages initiate unexpected outbound network calls
+  obfuscatedCode: true        # Flag packages containing minified/obfuscated code payloads
+  shellAccess: true           # Flag packages spawning sub-processes or shell execution
+  shellScriptOverride: true
+  telemetry: true             # Flag packages exfiltrating usage or network telemetry
+  troll: true
+  typosquat: true             # Detect packages imitating popular package names  
+  unresolvedRequire: true
