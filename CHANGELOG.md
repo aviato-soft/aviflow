@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- if data-parent is a form, all elements values are send to fetch action automatically
 - Status section on README.md
 - Badge on status section: jsdelivr
 - Badge on status section: npm version
