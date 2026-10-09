@@ -18,7 +18,8 @@ describe('AviFlow Tools Test Unit', () => {
         const sortedKeys = Object.keys(values).sort();
         const obj = {};
         sortedKeys.forEach(key => {
-            obj[key] = values[key];
+            const valuesForKey = values[key];
+            obj[key] = valuesForKey.length === 1 ? valuesForKey[0] : valuesForKey;
         });
 
         return obj;
@@ -121,7 +122,7 @@ describe('AviFlow Tools Test Unit', () => {
     });
 
 
-     test('tools / formData / skips null and undefined values', () => {
+    test('tools / formData / skips null and undefined values', () => {
         const spy = jest.spyOn(aviflow.tools, 'formEntries').mockReturnValue({
             valid: 'value',
             nullVal: null,
@@ -136,6 +137,51 @@ describe('AviFlow Tools Test Unit', () => {
 
         spy.mockRestore();
     });
+
+
+    test('parent is form and extracts all form entries', async () => {
+            // 1. Setup Mock Form
+            const form = document.createElement('form');
+            form.innerHTML = `
+                <input name="firstName" value="John" type="text">
+                <input name="age" value="30" type="number">
+                <input value="no-name">
+                <textarea name="description">A long description</textarea>
+                <select name="color">
+                    <option value="red">Red</option>
+                    <option value="blue" selected>Blue</option>
+                    <option value="green">Green</option>
+                </select>
+                <input name="isActive" type="checkbox" checked value="true">
+                <input name="isGreat" type="checkbox" checked>
+                <input name="isSubscribed" type="checkbox">
+            `;
+            document.body.appendChild(form);
+
+            // 2. Setup Trigger Element (Mock button)
+            const testElement = mock.element.button.test;
+            testElement.setAttribute('data-param-test', 'action'); // Add action just in case
+            testElement.setAttribute('data-parent', 'form');
+
+            // 3. Execute
+            // Use 'form' as the prefix for form entries to ensure they don't clash with data-param-*
+            const result = aviflow.tools.formData(testElement, 'form', true);
+
+            // 4. Verification
+            const formDataObject = formDataToObject(result);
+
+            // Assert form entries are present
+            expect(formDataObject.firstName).toBe('John');
+            expect(formDataObject.age).toBe('30');
+            expect(formDataObject.description).toBe('A long description');
+            expect(formDataObject.color).toBe('blue'); // Select should be the selected value
+            expect(formDataObject.isActive).toBe('true'); // Checkbox checked value
+            expect(formDataObject.isGreat).toBe('on');
+            expect(formDataObject.isSubscribed).toBeUndefined(); // Unchecked checkbox should not be included
+
+            // Clean up
+            document.body.removeChild(form);
+        });
 
 
 

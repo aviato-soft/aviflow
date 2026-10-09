@@ -331,11 +331,39 @@ class AviFlow {
 
       let entries = {};
 
-      // Extract Parent Dataset if requested
+      // Extract Parent Dataset or Form Entries if requested
       if (element.dataset.parent && useParentDataset !== false) {
         const parentElement = document.querySelector(element.dataset.parent);
         if (parentElement) {
-          entries = { ...entries, ...this.tools.formEntries(parentElement, prefix) };
+          if (parentElement.tagName === 'FORM') {
+            // Parent is a form, read all its entries
+            const formEntries = {};
+            // Select common form elements
+            const inputs = parentElement.querySelectorAll('input, textarea, select');
+
+            inputs.forEach(input => {
+              const name = input.name;
+              if (name) {
+                let value;
+                if (input.type === 'checkbox' || input.type === 'radio') {
+                  value = input.checked ? input.value : undefined;
+                } else if (input.tagName === 'SELECT') {
+                  value = input.value; // Current selected value
+                } else {
+                  value = input.value;
+                }
+
+                if (value !== undefined) {
+                   // Use the input name as the key
+                  formEntries[name] = value;
+                }
+              }
+            });
+            entries = { ...entries, ...formEntries };
+          } else {
+            // Parent is a standard container, read data-param-* attributes
+            entries = { ...entries, ...this.tools.formEntries(parentElement, prefix) };
+          }
         }
       }
 
