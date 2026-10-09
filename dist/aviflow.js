@@ -223,7 +223,29 @@ var AviFlow = class {
       if (element.dataset.parent && useParentDataset !== false) {
         const parentElement = document.querySelector(element.dataset.parent);
         if (parentElement) {
-          entries = { ...entries, ...this.tools.formEntries(parentElement, prefix) };
+          if (parentElement.tagName === "FORM") {
+            const formEntries = {};
+            const inputs = parentElement.querySelectorAll("input, textarea, select");
+            inputs.forEach((input) => {
+              const name = input.name;
+              if (name) {
+                let value;
+                if (input.type === "checkbox" || input.type === "radio") {
+                  value = input.checked ? input.value : void 0;
+                } else if (input.tagName === "SELECT") {
+                  value = input.value;
+                } else {
+                  value = input.value;
+                }
+                if (value !== void 0) {
+                  formEntries[name] = value;
+                }
+              }
+            });
+            entries = { ...entries, ...formEntries };
+          } else {
+            entries = { ...entries, ...this.tools.formEntries(parentElement, prefix) };
+          }
         }
       }
       entries = { ...entries, ...this.tools.formEntries(element, prefix) };
