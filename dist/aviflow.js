@@ -363,6 +363,30 @@ var AviFlow = class {
       });
     },
     /**
+     * Sets the content and associated class of a specified element based on a unique content ID.
+     *
+     * The content is retrieved from the element's `data-content-{contentId}` attribute.
+     * This function also updates the element's `data-content` attribute and adds the
+     * `contentId` as a CSS class to manage the visual state.
+     *
+     * @param {HTMLElement} element The target HTML element whose content is to be changed.
+     * @param {string} contentId A unique identifier used for the content, the class name, and the `data-content` attribute.
+     * @returns {void}
+     */
+    setElementContent: (element, contentId) => {
+      if (!element || !contentId) return;
+      const currentContent = element.dataset.content;
+      if (currentContent === contentId) return;
+      const newHtmlContent = element.getAttribute(`data-content-${contentId}`);
+      if (newHtmlContent === null) return;
+      if (currentContent) {
+        element.classList.remove(currentContent);
+      }
+      element.setAttribute("data-content", contentId);
+      element.classList.add(contentId);
+      element.innerHTML = newHtmlContent;
+    },
+    /**
      * Converts a string to camelCase.  Non-string inputs return an empty string.
      *
      * @param {*} text   The input string.
@@ -382,16 +406,6 @@ var AviFlow = class {
       }
     },
     /**
-     * Converts a string to PascalCase (capitalizes the first letter and subsequent words).
-     * Non-string inputs return an empty string.
-     *
-     * @param {*} text   The input string.
-     * @returns {string} The PascalCased string.
-     */
-    toPascalCase: (text) => {
-      return this.tools.toCamelCase(text, false);
-    },
-    /**
      * Capitalizes the first letter of a string. Non-string inputs return an empty string.
      *
      * @param {*} text   The input string.
@@ -400,6 +414,16 @@ var AviFlow = class {
     toCapitalize: (text) => {
       const trimText = text.trim().replace(/^[-_\s]+/, "");
       return trimText.charAt(0).toUpperCase() + trimText.slice(1);
+    },
+    /**
+     * Converts a string to PascalCase (capitalizes the first letter and subsequent words).
+     * Non-string inputs return an empty string.
+     *
+     * @param {*} text   The input string.
+     * @returns {string} The PascalCased string.
+     */
+    toPascalCase: (text) => {
+      return this.tools.toCamelCase(text, false);
     }
   };
 };
