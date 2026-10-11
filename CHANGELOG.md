@@ -20,7 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- AviFlow.tools.setElementContent
 - socket.yml
+
 
 ## [1.1.3] - 2026-10-09T10:03:34Z
 ### Added
