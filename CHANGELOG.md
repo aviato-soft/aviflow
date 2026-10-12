@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Changed
+- target logic is applied to all fn.functions not only to fetch
 
 ## [1.1.4] - 2026-10-11T09:09:40Z
 ### Added

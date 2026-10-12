@@ -22,7 +22,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                 ...item,
                 code: item.action.replace(/</g, '&lt;').replace(/>/g, '&gt;')
             };
-            const html = renderCard(safeItem);
+            let html = renderCard(safeItem);
+
+            if (!item.targetId) {
+                // Use non-greedy matching ([\s\S]*?) to ensure we only remove the box div and its contents,
+                // preserving any subsequent siblings.
+                const boxDivRegex = /<div class="box"[^>]*>[\s\S]*?<\/div>/g;
+                html = html.replace(boxDivRegex, '');
+            }
+
             grid.insertAdjacentHTML('beforeend', html);
         });
     }
@@ -30,7 +38,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     avi.fn.success = (data, element) => {
         alert('It works just fine!');
-        console.log(data)
+        console.log(data);
     }
 
 
@@ -70,12 +78,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     avi.fn.test = (element) => {
         console.log(element);
         alert('it works!');
+        return 'great - it works!';
     }
 
     avi.fn.testHandleCheckChange = (element) => {
-        console.log('Element checked state:', element.checked);
-        console.log('Element ID:', element.id);
-        console.log('Element type:', element.type);
+        return 'Checkbox is set: ' + element.checked;
+    }
+
+    avi.fn.testHandleSelectChange = (element) => {
+        return element.value;
     }
 
     avi.init();
