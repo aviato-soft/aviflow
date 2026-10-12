@@ -141,7 +141,8 @@ class AviFlow {
      */
     fetch: async (element) => {
       let data = null;
-      let url = element.dataset.url || element.getAttribute('href') || this.options.url;
+      const url = this.tools.getUrl(element);
+      //const method = this.tools.getMethod(element).toUpperCase();
       const method = (element.dataset.method || this.options.method).toUpperCase();
 
       // Optional: Disable element during loading state
@@ -416,6 +417,64 @@ class AviFlow {
       });
 
       return Array.from(uniqueEvents);
+    },
+
+
+    getMethod: (element) => {
+      if (!element) return this.options?.method ?? null;
+
+      // 1nd priority: element's own dataset method
+      if (element.dataset?.method) {
+        return element.dataset.method;
+      }
+
+      // 2nd Priority: Element itself is a <form> with a 'method' attribute
+      if (element.matches?.('form') && element.hasAttribute?.('method')) {
+        return element.getAttribute('method');
+      }
+
+      // Third priority: parent element's dataset method
+      if (element.dataset?.parent) {
+        const parentElement = document.querySelector(element.dataset.parent);
+
+        if (parentElement.matches?.('form') && parentElement.hasAttribute?.('method')) {
+          return parentElement.getAttribute('method');
+        }
+        
+        if (parentElement?.dataset?.method) {
+          return parentElement.dataset.method;
+        }
+      }
+
+      // Fallback: default options method or null
+      return this.options?.method ?? null;
+    },
+
+
+    getUrl: (element) => {
+      if (!element) return this.options?.url ?? null;
+
+      // Highest priority: element's own dataset URL
+      if (element.dataset?.url) {
+        return element.dataset.url;
+      }
+
+      // Second priority: element's href attribute
+      const href = element.getAttribute('href');
+      if (href && href !== '#') {
+        return href;
+      }
+
+      // Third priority: parent element's dataset URL
+      if (element.dataset?.parent) {
+        const parentElement = document.querySelector(element.dataset.parent);
+        if (parentElement?.dataset?.url) {
+          return parentElement.dataset.url;
+        }
+      }
+
+      // Fallback: default options URL or null
+      return this.options?.url ?? null;
     },
 
 

@@ -14,7 +14,7 @@ describe('AviFlow Tools Test Unit', () => {
         
         // Initialize AviFlow instance
         aviflow = new AviFlow();
-        aviflow.fn.test = function(e) {
+        aviflow.fn.test = function() {
             return 'Expect the unexpected!';
         }
     });

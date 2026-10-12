@@ -76,7 +76,7 @@ var AviFlow = class {
      */
     fetch: async (element) => {
       let data = null;
-      let url = element.dataset.url || element.getAttribute("href") || this.options.url;
+      const url = this.tools.getUrl(element);
       const method = (element.dataset.method || this.options.method).toUpperCase();
       const originalContent = element.innerHTML;
       this.tools.setLoadingState(element, true);
@@ -288,6 +288,42 @@ var AviFlow = class {
         }
       });
       return Array.from(uniqueEvents);
+    },
+    getMethod: (element) => {
+      if (!element) return this.options?.method ?? null;
+      if (element.dataset?.method) {
+        return element.dataset.method;
+      }
+      if (element.matches?.("form") && element.hasAttribute?.("method")) {
+        return element.getAttribute("method");
+      }
+      if (element.dataset?.parent) {
+        const parentElement = document.querySelector(element.dataset.parent);
+        if (parentElement.matches?.("form") && parentElement.hasAttribute?.("method")) {
+          return parentElement.getAttribute("method");
+        }
+        if (parentElement?.dataset?.method) {
+          return parentElement.dataset.method;
+        }
+      }
+      return this.options?.method ?? null;
+    },
+    getUrl: (element) => {
+      if (!element) return this.options?.url ?? null;
+      if (element.dataset?.url) {
+        return element.dataset.url;
+      }
+      const href = element.getAttribute("href");
+      if (href && href !== "#") {
+        return href;
+      }
+      if (element.dataset?.parent) {
+        const parentElement = document.querySelector(element.dataset.parent);
+        if (parentElement?.dataset?.url) {
+          return parentElement.dataset.url;
+        }
+      }
+      return this.options?.url ?? null;
     },
     /**
      * Returns `true` if the given value is a non-null, empty plain object.
