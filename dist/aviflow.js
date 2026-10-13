@@ -50,7 +50,6 @@ var AviFlow = class {
       if (element) {
         const action = element.dataset[this.options.datasetSelectorName];
         if (typeof this.fn[action] === "function") {
-          event.preventDefault();
           const data = await this.fn[action](element);
           this.tools.setTargetContent(element, data);
         }

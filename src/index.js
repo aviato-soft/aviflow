@@ -110,7 +110,7 @@ class AviFlow {
         const action = element.dataset[this.options.datasetSelectorName];
 
         if (typeof this.fn[action] === 'function') {
-          event.preventDefault();
+//        event.preventDefault();
           const data = await this.fn[action](element);
           this.tools.setTargetContent(element, data);
         }
