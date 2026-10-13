@@ -1,0 +1,10 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    # Optional: customize pull request settings
+    open-pull-requests-limit: 10
+    security-updates:
+      enabled: true

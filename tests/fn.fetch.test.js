@@ -136,7 +136,7 @@ describe('AviFlow Tools Test Unit', () => {
         // Assert HTML injection into target container worked flawlessly
         const output = document.getElementById('output');
         const result = output.innerHTML;
-        const expected = JSON.stringify(mock.expect.json);
+        const expected = JSON.stringify(mock.expect.json.html);
         expect(result).toBe(expected);
     });
 

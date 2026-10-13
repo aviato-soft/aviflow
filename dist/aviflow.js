@@ -50,7 +50,8 @@ var AviFlow = class {
       if (element) {
         const action = element.dataset[this.options.datasetSelectorName];
         if (typeof this.fn[action] === "function") {
-          await this.fn[action](element);
+          const data = await this.fn[action](element);
+          this.tools.setTargetContent(element, data);
         }
       }
     };
@@ -74,9 +75,8 @@ var AviFlow = class {
      */
     fetch: async (element) => {
       let data = null;
-      let url = element.dataset.url || element.getAttribute("href") || this.options.url;
+      const url = this.tools.getUrl(element);
       const method = (element.dataset.method || this.options.method).toUpperCase();
-      const targetSelector = element.dataset.target || false;
       const originalContent = element.innerHTML;
       this.tools.setLoadingState(element, true);
       try {
@@ -101,20 +101,6 @@ var AviFlow = class {
           data = await response.json();
         } else {
           data = await response.text();
-        }
-        if (targetSelector) {
-          const targetContainer = document.querySelector(targetSelector);
-          if (targetContainer) {
-            if (typeof data === "object") {
-              if (data.html && typeof data.html === "string") {
-                targetContainer.innerHTML = data.html;
-              } else {
-                targetContainer.textContent = JSON.stringify(data);
-              }
-            } else {
-              targetContainer.innerHTML = data;
-            }
-          }
         }
         if (element.dataset.onSuccess) {
           this.tools.executeCallback(element, "onSuccess", data, element);
@@ -302,6 +288,42 @@ var AviFlow = class {
       });
       return Array.from(uniqueEvents);
     },
+    getMethod: (element) => {
+      if (!element) return this.options?.method ?? null;
+      if (element.dataset?.method) {
+        return element.dataset.method;
+      }
+      if (element.matches?.("form") && element.hasAttribute?.("method")) {
+        return element.getAttribute("method");
+      }
+      if (element.dataset?.parent) {
+        const parentElement = document.querySelector(element.dataset.parent);
+        if (parentElement.matches?.("form") && parentElement.hasAttribute?.("method")) {
+          return parentElement.getAttribute("method");
+        }
+        if (parentElement?.dataset?.method) {
+          return parentElement.dataset.method;
+        }
+      }
+      return this.options?.method ?? null;
+    },
+    getUrl: (element) => {
+      if (!element) return this.options?.url ?? null;
+      if (element.dataset?.url) {
+        return element.dataset.url;
+      }
+      const href = element.getAttribute("href");
+      if (href && href !== "#") {
+        return href;
+      }
+      if (element.dataset?.parent) {
+        const parentElement = document.querySelector(element.dataset.parent);
+        if (parentElement?.dataset?.url) {
+          return parentElement.dataset.url;
+        }
+      }
+      return this.options?.url ?? null;
+    },
     /**
      * Returns `true` if the given value is a non-null, empty plain object.
      *
@@ -385,6 +407,30 @@ var AviFlow = class {
       element.setAttribute("data-content", contentId);
       element.classList.add(contentId);
       element.innerHTML = newHtmlContent;
+    },
+    setTargetContent: (element, data) => {
+      if (!element || data === void 0) return;
+      const targetSelector = element.dataset.target || false;
+      if (!targetSelector) return;
+      const targetContainer = document.querySelector(targetSelector);
+      if (!targetContainer) return;
+      if (typeof data === "string") {
+        targetContainer.innerHTML = data;
+        return;
+      }
+      if (typeof data === "object" && data !== null) {
+        if (data.hasOwnProperty("html")) {
+          if (typeof data.html === "string") {
+            targetContainer.innerHTML = data.html;
+          } else {
+            targetContainer.textContent = JSON.stringify(data.html);
+          }
+        } else {
+          targetContainer.textContent = JSON.stringify(data);
+        }
+      } else {
+        targetContainer.textContent = JSON.stringify(data);
+      }
     },
     /**
      * Converts a string to camelCase.  Non-string inputs return an empty string.

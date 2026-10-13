@@ -168,6 +168,7 @@ body {
     cursor: pointer;
     display: inline-block;
     font-size: 1rem;
+    margin-bottom: 1rem;
     padding: .625rem 1.25rem;
     text-decoration: none;
     transition: background .2s ease, transform .15s ease;

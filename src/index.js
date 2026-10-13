@@ -110,8 +110,9 @@ class AviFlow {
         const action = element.dataset[this.options.datasetSelectorName];
 
         if (typeof this.fn[action] === 'function') {
-          //event.preventDefault();
-          await this.fn[action](element);
+//        event.preventDefault();
+          const data = await this.fn[action](element);
+          this.tools.setTargetContent(element, data);
         }
       }
     };
@@ -140,9 +141,9 @@ class AviFlow {
      */
     fetch: async (element) => {
       let data = null;
-      let url = element.dataset.url || element.getAttribute('href') || this.options.url;
+      const url = this.tools.getUrl(element);
+      //const method = this.tools.getMethod(element).toUpperCase();
       const method = (element.dataset.method || this.options.method).toUpperCase();
-      const targetSelector = element.dataset.target || false;
 
       // Optional: Disable element during loading state
       const originalContent = element.innerHTML;
@@ -179,23 +180,6 @@ class AviFlow {
           data = await response.json();
         } else {
           data = await response.text();
-        }
-
-        // Render automatically if `data-target` is provided
-        if (targetSelector) {
-          const targetContainer = document.querySelector(targetSelector);
-
-          if (targetContainer) {
-            if (typeof data === 'object') {
-              if (data.html && typeof data.html === 'string') {
-                targetContainer.innerHTML = data.html;
-              } else {
-                targetContainer.textContent = JSON.stringify(data);
-              }
-            } else {
-              targetContainer.innerHTML = data;
-            }
-          }
         }
 
         // Execute inline callback if present, otherwise use default success callback
@@ -436,6 +420,64 @@ class AviFlow {
     },
 
 
+    getMethod: (element) => {
+      if (!element) return this.options?.method ?? null;
+
+      // 1nd priority: element's own dataset method
+      if (element.dataset?.method) {
+        return element.dataset.method;
+      }
+
+      // 2nd Priority: Element itself is a <form> with a 'method' attribute
+      if (element.matches?.('form') && element.hasAttribute?.('method')) {
+        return element.getAttribute('method');
+      }
+
+      // Third priority: parent element's dataset method
+      if (element.dataset?.parent) {
+        const parentElement = document.querySelector(element.dataset.parent);
+
+        if (parentElement.matches?.('form') && parentElement.hasAttribute?.('method')) {
+          return parentElement.getAttribute('method');
+        }
+        
+        if (parentElement?.dataset?.method) {
+          return parentElement.dataset.method;
+        }
+      }
+
+      // Fallback: default options method or null
+      return this.options?.method ?? null;
+    },
+
+
+    getUrl: (element) => {
+      if (!element) return this.options?.url ?? null;
+
+      // Highest priority: element's own dataset URL
+      if (element.dataset?.url) {
+        return element.dataset.url;
+      }
+
+      // Second priority: element's href attribute
+      const href = element.getAttribute('href');
+      if (href && href !== '#') {
+        return href;
+      }
+
+      // Third priority: parent element's dataset URL
+      if (element.dataset?.parent) {
+        const parentElement = document.querySelector(element.dataset.parent);
+        if (parentElement?.dataset?.url) {
+          return parentElement.dataset.url;
+        }
+      }
+
+      // Fallback: default options URL or null
+      return this.options?.url ?? null;
+    },
+
+
 
     /**
      * Returns `true` if the given value is a non-null, empty plain object.
@@ -554,6 +596,37 @@ class AviFlow {
       element.setAttribute('data-content', contentId);
       element.classList.add(contentId);
       element.innerHTML = newHtmlContent
+    },
+
+
+
+    setTargetContent: (element, data) => {
+      if (!element || data === undefined) return;
+
+      const targetSelector = element.dataset.target || false;
+      if(!targetSelector) return;
+
+      const targetContainer = document.querySelector(targetSelector);
+      if(!targetContainer) return;
+
+      if (typeof data === 'string') {
+        targetContainer.innerHTML = data;
+        return;
+      }
+
+      if (typeof data === 'object' && data !== null) {
+        if (data.hasOwnProperty('html')) {
+          if(typeof data.html === 'string') {
+            targetContainer.innerHTML = data.html;
+          } else {
+            targetContainer.textContent = JSON.stringify(data.html);
+          }
+        } else {
+          targetContainer.textContent = JSON.stringify(data);
+        }
+      } else {
+        targetContainer.textContent = JSON.stringify(data);
+      }
     },
 
 

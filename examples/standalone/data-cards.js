@@ -1,6 +1,21 @@
 const dataCards = [
     {
-        title: "Simple usage",
+        title: "Simple usage - just trigger an action",
+        action: `<button 
+    data-action="test" 
+    >Click me!</button>`,
+//      targetId: "",
+        usageNote: `Simple action defined on javascript code: <br>
+    <pre>
+    const avi = new AviFlow();
+    avi.fn.test = (element) => {
+        alert('it works!');
+    }
+    avi.init();
+    </pre>`
+    },
+    {
+        title: "Simple fetch",
         action: `<button 
     data-action="fetch" 
     data-url="https://jsonplaceholder.typicode.com/posts" 
@@ -26,7 +41,7 @@ const dataCards = [
         usageNote: `Similar with <strong>Simple Example</strong>, but using <strong>a</strong> tag for trigger instead of a button.<br>Using <strong>href</strong> for anchor elements will made obsolete the <strong>data-url</strong> attribute.`
     },
     {
-        title: "Minimalist",
+        title: "Minimalist fetch",
         action: `<button 
     data-action="fetch"
     data-target="#target-minimalist"
@@ -71,7 +86,45 @@ const dataCards = [
     <label for="testCheckbox">Click to toggle</label>`,
         targetId: "target-checkbox-event",
         usageNote: `Demonstrates handling native DOM events, specifically the 'change' event on an input element. The AviFlow mechanism captures the event and invokes the specified handler function with the current state of the input.`
-    }
+    },
+    {
+        title: "Event Handler: Select Change",
+        action: `<label for="testSelect">Choose one color:</label>
+<select
+    data-action="testHandleSelectChange" 
+    data-event="change"
+    data-target="#target-select-event"
+    id="testSelect">
+        <option>Black</option>
+        <option>Blue</option>
+        <option>Green</option>
+        <option>Red</option>
+        <option>White</option>
+</select>`,
+        targetId: "target-select-event",
+        usageNote: `Demonstrates handling native DOM events, specifically the 'change' event on select element. The AviFlow mechanism captures the event and invokes the specified handler function with select value.`
+    },
+    {
+        title: "Fetch using parent data",
+        action: `<form id=form-parent"
+    data-url="https://jsonplaceholder.typicode.com/posts" 
+    data-param-company="aviato-soft">
+<button 
+    data-action="fetch" 
+    data-parent="#form-parent"
+    data-target="#target-parent"
+    data-param-title="foo"
+    >Click me to Fetch</button>
+<button 
+    data-action="fetch" 
+    data-parent="#form-parent"
+    data-target="#target-parent"
+    data-param-title="bar"
+    >Click me to Fetch</button>
+</form>`,
+        targetId: "target-parent",
+        usageNote: ``
+    },
 /*
     {
         title: "Multiple Params",
