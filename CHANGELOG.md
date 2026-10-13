@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - target logic is applied to all fn.functions not only to fetch
 - parent configuration for fetch: data-url, data-method
+- add dependencies security audit sheduler
 
 ## [1.1.4] - 2026-10-11T09:09:40Z
 ### Added
