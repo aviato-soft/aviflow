@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+
+## [1.1.5] - 2026-10-13T16:43:21Z
 ### Changed
 - target logic is applied to all fn.functions not only to fetch
 - parent configuration for fetch: data-url, data-method
