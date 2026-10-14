@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 - force node v.24 for github workflows
 - update github workflow actions from v4 to v7
+- use ubuntu 26.04 for  github workflow actions
 
 
 ## [1.1.5] - 2026-10-13T16:43:21Z
