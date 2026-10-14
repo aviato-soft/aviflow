@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+- force node v.24 for github workflows
+
 
 ## [1.1.5] - 2026-10-13T16:43:21Z
 ### Changed
