@@ -9,6 +9,9 @@ on:
     # Runs every day at 5:54 UTC (6 minutes before 6 AM UTC)
     - cron: '54 5 * * *'
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   audit:
     runs-on: ubuntu-latest
