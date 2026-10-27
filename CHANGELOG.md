@@ -19,9 +19,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+Full refactoring prepare for v.2.0.0
+### Added
+- create docs as github pages
+- AviFlow.js - the main file
+- AviFlowActions.js - the integrated action
+- AviFlowCoreEngine.js - the core engine logic
+- tools/AviElement.js - tools to handle html elements
+- tools/AviText.js - tools to handle text format
+
+### Changed
+- new file structure
 - force node v.24 for github workflows
 - update github workflow actions from v4 to v7
 - use ubuntu 26.04 for  github workflow actions
+- update jest version to 30.5.2
+
+### Removed
+- index.js
 
 
 ## [1.1.5] - 2026-10-13T16:43:21Z
