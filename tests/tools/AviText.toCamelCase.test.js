@@ -1,51 +1,52 @@
 import { expect, jest, test } from '@jest/globals';
-import AviFlow from '../src/index.js';
+import AviText from '../../src/tools/AviText.js';
 
-describe('AviFlow Tools Test Unit', () => {
-    const aviflow = new AviFlow()
-    test('tools / toCamelCase(str)', async () => {
-        let result = aviflow.tools.toCamelCase("hello_world");
+describe('AviText / toCamelCase', () => {
+
+  test('Try to test all case in once', async () => {
+        let result = AviText.toCamelCase("hello_world");
         let expected = "helloWorld";
         expect(result).toEqual(expected);
 
-        result = aviflow.tools.toCamelCase("Convert-me-now", false);
+        result = AviText.toCamelCase("Convert-me-now", false);
         expected = "ConvertMeNow";
         expect(result).toEqual(expected);
 
-        result = aviflow.tools.toCamelCase("CamelCase-test-case");
+        result = AviText.toCamelCase("CamelCase-test-case");
         expected = "camelCaseTestCase";
         expect(result).toEqual(expected);
 
-        result = aviflow.tools.toCamelCase("pages count");
+        result = AviText.toCamelCase("pages count");
         expected = "pagesCount";
         expect(result).toEqual(expected);
 
-        result = aviflow.tools.toCamelCase("__bizarre--mix");
+        result = AviText.toCamelCase("__bizarre--mix");
         expected = "bizarreMix";
         expect(result).toEqual(expected);
 
-        result = aviflow.tools.toCamelCase('a--');
+        result = AviText.toCamelCase('a--');
         expected = 'a';
         expect(result).toEqual(expected);
 
-        result = aviflow.tools.toCamelCase('-_-');
+        result = AviText.toCamelCase('-_-');
         expected = '';
         expect(result).toEqual(expected);
 
-        result = aviflow.tools.toCamelCase([]);
+        result = AviText.toCamelCase([]);
         expected = '';
         expect(result).toEqual(expected);
 
-        result = aviflow.tools.toCamelCase(undefined);
+        result = AviText.toCamelCase(undefined);
         expected = '';
         expect(result).toEqual(expected);
 
-        result = aviflow.tools.toCamelCase(null);
+        result = AviText.toCamelCase(null);
         expected = '';
         expect(result).toEqual(expected);
 
-        result = aviflow.tools.toCamelCase({});
+        result = AviText.toCamelCase({});
         expected = '';
         expect(result).toEqual(expected);
     });
-})
+
+});

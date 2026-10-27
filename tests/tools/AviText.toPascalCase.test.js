@@ -1,51 +1,53 @@
 import { expect, jest, test } from '@jest/globals';
-import AviFlow from '../src/index.js';
+import AviText from '../../src/tools/AviText.js';
 
-describe('AviFlow Tools Test Unit', () => {
-    const aviflow = new AviFlow()
+describe('AviText / toPascalCase', () => {
+    let expected;
+    let result;
+
     test('tools / toPascalCase(str)', () => {
-        let result = aviflow.tools.toPascalCase("hello_world");
-        let expected = "HelloWorld";
+        result = AviText.toPascalCase("hello_world");
+        expected = "HelloWorld";
         expect(result).toEqual(expected);
 
-        result = aviflow.tools.toPascalCase("Convert-me-now");
+        result = AviText.toPascalCase("Convert-me-now");
         expected = "ConvertMeNow";
         expect(result).toEqual(expected);
 
-        result = aviflow.tools.toPascalCase("pascalCase-test-case");
+        result = AviText.toPascalCase("pascalCase-test-case");
         expected = "PascalCaseTestCase";
         expect(result).toEqual(expected);
 
-        result = aviflow.tools.toPascalCase("pages count");
+        result = AviText.toPascalCase("pages count");
         expected = "PagesCount";
         expect(result).toEqual(expected);
 
-        result = aviflow.tools.toPascalCase("__bizarre--mix");
+        result = AviText.toPascalCase("__bizarre--mix");
         expected = "BizarreMix";
         expect(result).toEqual(expected);
 
-        result = aviflow.tools.toPascalCase('a--');
+        result = AviText.toPascalCase('a--');
         expected = 'A';
         expect(result).toEqual(expected);
 
-        result = aviflow.tools.toPascalCase('-_-');
+        result = AviText.toPascalCase('-_-');
         expected = '';
         expect(result).toEqual(expected);
 
-        result = aviflow.tools.toPascalCase([]);
+        result = AviText.toPascalCase([]);
         expected = '';
         expect(result).toEqual(expected);
 
-        result = aviflow.tools.toPascalCase(undefined);
+        result = AviText.toPascalCase(undefined);
         expected = '';
         expect(result).toEqual(expected);
 
-        result = aviflow.tools.toPascalCase(null);
+        result = AviText.toPascalCase(null);
         expected = '';
         expect(result).toEqual(expected);
 
-        result = aviflow.tools.toPascalCase({});
+        result = AviText.toPascalCase({});
         expected = '';
         expect(result).toEqual(expected);
     });
-})
+});
