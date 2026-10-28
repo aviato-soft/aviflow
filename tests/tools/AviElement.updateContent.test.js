@@ -69,6 +69,15 @@ describe('AviElement / updateContent', () => {
   test('invalid element', () => {
     result = AviElement.updateContent();
     expect(result).toBeNull();
+  });
+
+
+  test('sanitizer', () => {
+    AviElement.sanitizer = (html) => (JSON.stringify(html)); //bad sanitizer - do not do it in production!
+    result = AviElement.updateContent(target, {html: {html: "html"}});
+    expect(target.innerHTML).toBe('"{\\"html\\":\\"html\\"}"');
+    expect(result).toBe(target);
+    
   })
 
 });

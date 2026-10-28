@@ -57,6 +57,15 @@ describe('AviElement / setActiveContent', () => {
     expect(container.querySelector('[data-content="panel-b"]').getAttribute('aria-hidden')).toBe('true');
     expect(container.querySelector('[data-content="panel-c"]').getAttribute('aria-hidden')).toBe('true');
     
+    result = AviElement.setActiveContent(container, "test, panel-a, 2, ");
+    expect(result).toBe(container);
+    expect(container.querySelector('[data-content="panel-a"]').classList.contains('hidden')).toBe(false);
+    expect(container.querySelector('[data-content="panel-b"]').classList.contains('hidden')).toBe(true);
+    expect(container.querySelector('[data-content="panel-c"]').classList.contains('hidden')).toBe(true);
+    expect(container.querySelector('[data-content="panel-a"]').getAttribute('aria-hidden')).toBeNull();
+    expect(container.querySelector('[data-content="panel-b"]').getAttribute('aria-hidden')).toBe('true');
+    expect(container.querySelector('[data-content="panel-c"]').getAttribute('aria-hidden')).toBe('true');
+
     //expect(containerInnerHtml).toBe(container.innerHTML);
 
   });
@@ -137,6 +146,13 @@ describe('AviElement / setActiveContent', () => {
     expect(result).toBe(container);
     expect(containerInnerHtml).toBe(container.innerHTML);
 
+    result = AviElement.setActiveContent(container, 'panel-a', { "hidden-class": customClass });
+    expect(result).toBe(container);
+    expect(container.querySelector('[data-content="panel-a"]').getAttribute('aria-hidden')).toBeNull;
+    expect(container.querySelector('[data-content="panel-b"]').getAttribute('aria-hidden')).toBe('true');
+    expect(container.querySelector('[data-content="panel-c"]').getAttribute('aria-hidden')).toBe('true');
+
+    customClass = false;
     result = AviElement.setActiveContent(container, 'panel-a', { "hidden-class": customClass });
     expect(result).toBe(container);
     expect(container.querySelector('[data-content="panel-a"]').getAttribute('aria-hidden')).toBeNull;

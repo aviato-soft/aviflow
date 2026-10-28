@@ -94,12 +94,14 @@ describe('AviElement / togglePendingState', () => {
     button.style.pointerEvents = 'auto';
     button.disabled = 'disabled';
     button.classList.add('pending');
+    button.setAttribute('aria-busy', 'busy');
 
     result = AviElement.togglePendingState(button, true);
     expect(button.style.opacity).toBe("0.6");
     expect(button.style.pointerEvents).toBe("none");
     expect(button.disabled).toBe(true);
     expect(button.classList.contains('pending')).toBe(true);
+    expect(button.getAttribute('aria-busy')).toBe('true');
     expect(result).toBe(button);
 
     //restore default state:
@@ -107,6 +109,7 @@ describe('AviElement / togglePendingState', () => {
     expect(button.style.opacity).toBe("0.99");
     expect(button.style.pointerEvents).toBe("auto");
     expect(button.disabled).toBe(true);
+    expect(button.getAttribute('aria-busy')).toBe('busy');
     //expect(button.classList.contains('pending')).toBe(true);
     expect(result).toBe(button);
 
@@ -116,6 +119,7 @@ describe('AviElement / togglePendingState', () => {
     expect(button.style.pointerEvents).toBe("auto");
     expect(button.disabled).toBe(true);
     expect(button.classList.contains('pending')).toBe(false);
+    expect(button.getAttribute('aria-busy')).toBeNull();
     expect(result).toBe(button);
   });
 

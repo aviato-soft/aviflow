@@ -3,8 +3,8 @@ import AviElement from '../../src/tools/AviElement.js';
 
 describe('AviElement / getFormParams', () => {
 
-    beforeEach(() => {
-        document.body.innerHTML = `<form>
+  beforeEach(() => {
+    document.body.innerHTML = `<form>
             <input type="text" name="textInput" value="Some Dummy Text" placeholder="Text Input">
             <input type="password" name="passwordInput" value="dummy_password" placeholder="Password">
             <input type="email" name="emailInput" value="user@example.com" placeholder="Email">
@@ -22,42 +22,47 @@ describe('AviElement / getFormParams', () => {
             <option value="2" selected>Option 2</option>
             </select>
             <textarea name="textAreaInput" placeholder="Text Area">Some dummy content</textarea>
-            <button id="btnTest" type="submit">Submit</button>
-            </form>`;
-    });
+            <button id="btnSubmit" type="submit">Submit</button>
+            </form>
+            <div id="form-out-container">
+            <button id="btnTest">Click me!</button>
+            </div>
 
-    test('returns empty object when element or attributes are missing', () => {
-        expect(AviElement.getFormParams(null)).toEqual({});
-        expect(AviElement.getFormParams(undefined)).toEqual({});
-        expect(AviElement.getFormParams({})).toEqual({});
-        expect(AviElement.getFormParams(document.getElementById('btnTest'))).toEqual({});
-    });
+            `;
+  });
 
-
-    test('parses all form elements', () => {
-        const test = {
-            checkboxInput1: '1',
-            dateInput: '2023-10-27',
-            emailInput: 'user@example.com',
-            numberInput: '123',
-            passwordInput: 'dummy_password',
-            radioInput: 'a',
-            rangeInput: '75',
-            selectInput: '2',
-            telInput: '1234567890',
-            textAreaInput: 'Some dummy content',
-            textInput: 'Some Dummy Text',
-            timeInput: '14:30:00',
-            urlInput: 'https://dummy.example.com',
-        }
-        const result = AviElement.getFormParams(document.querySelector('form'));
-        expect(result).toEqual(test);
-    });
+  test('returns empty object when element or attributes are missing', () => {
+    expect(AviElement.getFormParams(null)).toEqual({});
+    expect(AviElement.getFormParams(undefined)).toEqual({});
+    expect(AviElement.getFormParams({})).toEqual({});
+    expect(AviElement.getFormParams(document.getElementById('btnSubmit'))).toEqual({});
+  });
 
 
-    test('handles multiple values for the same key by converting to array', () => {
-        // Reset DOM for this specific test case to ensure isolation
-        document.body.innerHTML = `<form>
+  test('parses all form elements', () => {
+    const test = {
+      checkboxInput1: '1',
+      dateInput: '2023-10-27',
+      emailInput: 'user@example.com',
+      numberInput: '123',
+      passwordInput: 'dummy_password',
+      radioInput: 'a',
+      rangeInput: '75',
+      selectInput: '2',
+      telInput: '1234567890',
+      textAreaInput: 'Some dummy content',
+      textInput: 'Some Dummy Text',
+      timeInput: '14:30:00',
+      urlInput: 'https://dummy.example.com',
+    }
+    const result = AviElement.getFormParams(document.querySelector('form'));
+    expect(result).toEqual(test);
+  });
+
+
+  test('handles multiple values for the same key by converting to array', () => {
+    // Reset DOM for this specific test case to ensure isolation
+    document.body.innerHTML = `<form>
             <input type="text" name="multipleKey" value="one">
             <input type="text" name="multipleKey" value="two">
             <input type="text" name="multipleKey" value="three">
@@ -66,11 +71,51 @@ describe('AviElement / getFormParams', () => {
             <input type="radio" name="singleRadio" id="radioTest3" value="3">
         </form>`;
 
-        const formElement = document.querySelector('form');
-        const result = AviElement.getFormParams(formElement);
+    const formElement = document.querySelector('form');
+    const result = AviElement.getFormParams(formElement);
 
-        expect(result.multipleKey).toEqual(['one', 'two', 'three']);
-        expect(result.singleRadio).toBe('2');
-    });
+    expect(result.multipleKey).toEqual(['one', 'two', 'three']);
+    expect(result.singleRadio).toBe('2');
+  });
+
+
+  test('call from an element inside form', () => {
+    const buttonSubmit = document.getElementById('btnSubmit');
+    const buttonTest = document.getElementById('btnTest');
+    const test = {
+      checkboxInput1: '1',
+      dateInput: '2023-10-27',
+      emailInput: 'user@example.com',
+      numberInput: '123',
+      passwordInput: 'dummy_password',
+      radioInput: 'a',
+      rangeInput: '75',
+      selectInput: '2',
+      telInput: '1234567890',
+      textAreaInput: 'Some dummy content',
+      textInput: 'Some Dummy Text',
+      timeInput: '14:30:00',
+      urlInput: 'https://dummy.example.com',
+    }
+    let result = AviElement.getFormParams(buttonSubmit, true);
+    expect(result).toEqual(test);
+
+    result = AviElement.getFormParams(buttonTest, true);
+    expect(result).toEqual({});
+
+  });
+
+
+  test('__proto__ html element', () => {
+    document.body.innerHTML = `
+      <form>
+        <input type="text" name="__proto__" value="hello">
+        <input type="file" name="__proto__">
+        <input type="text" name="name" value="normal field">
+      </form>`;
+    const formElement = document.querySelector('form');
+    const result = AviElement.getFormParams(formElement);
+    expect(result).toEqual({"name": "normal field"});
+  });
 
 });
