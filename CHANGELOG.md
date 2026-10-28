@@ -27,6 +27,7 @@ Full refactoring prepare for v.2.0.0
 - AviFlowCoreEngine.js - the core engine logic
 - tools/AviElement.js - tools to handle html elements
 - tools/AviText.js - tools to handle text format
+- media assets
 
 ### Changed
 - new file structure

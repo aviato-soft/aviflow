@@ -1,0 +1,9 @@
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+pre {
+  font-family: 'Fira Code' !important;
+  font-feature-settings: "liga" 1, "calt" 1;
+  font-variant-ligatures: normal;
+}

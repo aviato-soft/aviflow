@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="auto">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AviFlow - Standalone Examples</title>
+
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/img/favicon/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/img/favicon/favicon-16x16.png">
+  <link rel="manifest" href="assets/img/favicon/site.webmanifest">
+
+  <link rel="stylesheet" href="assets/style.css">
+
+  <!-- Load Fira Code from Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.2/font/bootstrap-icons.min.css">
+  <link rel="stylesheet"
+    href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.12.0/build/styles/default.min.css">
+</head>
+
+<body>
+  <header xclass="border-bottom-1 d-flex justify-content-between">
+    <nav class="navbar bg-body-tertiary">
+      <div class="container-fluid">
+        <div class="start-header">
+          <a class="navbar-brand"><img src="assets/img/aviflow-logo.svg" width="64px" height="64px"><span class="align-middle fs-2 mx-3"><strong>Avi</strong>Flow</span></a>
+          <pre class="allign-top code d-inline-block fs-5 fw-bold">data-flow="Event -> Action -> Target"</pre>
+        </div>
+        <menu class="end-header">
+          <button class="btn btn-outline-secondary" aria-label="Toggle dark/light mode" data-flow="toogleTheme -|">
+            <i data-content="auto" class="bi bi-circle-half"></i>
+            <i data-content="dark" class="bi bi-sun-fill d-none"></i>
+            <i data-content="light" class="bi bi-moon-stars-fill d-none"></i>
+          </button>
+        </menu>
+      </div>
+    </nav>
+<!--
+    <div class="start-header">
+      <a href="#"></a>
+      <span>Docs</span>
+    </div>
+-->
+    
+  </header>
+  <aside>
+    <nav><button class="btn btn-primary" data-flow="getSection -> main" data-section="test">Click to load section test</button></nav>
+  </aside>
+  <main class="m-3">
+    <h1>AviFlow Interactive Demo</h1>
+    <p>Demonstrating data-flow attribute handling with missing optional parameters</p>
+    <hr>
+    <div id="card">
+      <h3>Full Flow: Event -> Action -> Target</h3>
+    </div>
+
+
+
+    <pre class="m-3"><code class="language-html p-3">
+&lt;body&gt;
+&lt;!-- commented line --&gt;
+&lt;/body&gt;
+</code></pre>
+
+    <pre class="m-3"><code class="language-javascript p-3">
+document.addEventListener('DOMContentLoaded', () => {
+//some comments ...
+});
+</code></pre>
+  </main>
+  <footer></footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+    crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.12.0/build/highlight.min.js"></script>
+
+  <!-- Library script -->
+  <!-- for debugging use: -->
+  <script type="module" src="../src/AviFlow.js"></script>
+  <!-- -->
+  <!-- for testing use: -- >
+  <script src="../../dist/aviflow.min.js"></script>
+  <! -- -- >
+  <script src="https://cdn.jsdelivr.net/npm/aviflow@1.1.5/dist/aviflow.min.js" crossorigin="anonymous" integrity="sha512-Wq2p7SfSecIiXY9s0Sc3HAZ66LrQbxadI9ckg+ISl6u4ZyNPRW7E6mHLTPnlBKhZMyAIKnkJ9PjiPblPA9mkGQ=="></script>
+  <! -- -->
+
+  <!-- App logic: callbacks + initialization -->
+  <script type="module" src="app.js"></script>
+  </body>
+
+</html>
