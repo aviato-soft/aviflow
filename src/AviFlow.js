@@ -31,11 +31,25 @@ import { AviText } from './tools/AviText.js';
  *   - **`.stop`**: Invokes `event.stopPropagation()`.
  * - **`action`**: A string identifying a callable method within the flow's `action` registry.
  * - **`target`**: A standard CSS selector string defining one or more elements that will receive the action's result.
+ * 
+ * ### Examples:
+ *   data-flow="fetch -> #list"                      click, fetch, update #list
+ *   data-flow="load"                                click, load
+ *   data-flow="fetch -|"                            click, fetch, no target
+ *   data-flow="focus -> fetch -|"                   focus, fetch, no target
+ *   data-flow="submit.prevent -> fetch -> #result"  ajax form
+ *   data-flow="submit.prevent -> save -|"           ajax form, nothing to update
  *
  * ### Usage and Behavior
- * - Malformed flow definitions (e.g., missing required components or incorrect structure) are logged as warnings and will not be registered.
- * - Actions are executed via `action.call(htmlNode, flow)`, where `htmlNode` is the initiating HTML element and `flow` is the `AviFlow` instance.
- * - Actions can be synchronous or asynchronous (returning a `Promise`), with asynchronous results being handled by `AviFlowCoreEngine`.
+ * - Malformed flow definitions (missing required components or incorrect 
+ *   structure, e.g. an empty action, an empty target such as "fetch ->", more 
+ *   than three parts, or "-|" after three parts) are logged as warnings and 
+ *   will not be registered.
+ * - Modifiers are only recognised at the END of the event part 
+ *   ("my.event" is a plain event name).
+ * - Actions are executed via `action.call(htmlNode, flow)`, where `htmlNode` 
+ *   is the initiating HTML element and `flow` is the `AviFlow` instance and 
+ *   may be sync or async.
  */
 class AviFlow {
     #core = new AviFlowCoreEngine(this);
