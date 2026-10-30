@@ -1,100 +1,127 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="auto">
+<html lang="en" data-bs-theme="auto">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AviFlow - Standalone Examples</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AviFlow Documentation</title>
 
   <link rel="apple-touch-icon" sizes="180x180" href="assets/img/favicon/apple-touch-icon.png">
+  <link rel="icon" href="assets/img/favicon/favicon.ico">
   <link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="assets/img/favicon/favicon-16x16.png">
   <link rel="manifest" href="assets/img/favicon/site.webmanifest">
-
-  <link rel="stylesheet" href="assets/style.css">
 
   <!-- Load Fira Code from Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
   
-
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
     integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.2/font/bootstrap-icons.min.css">
-  <link rel="stylesheet"
-    href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.12.0/build/styles/default.min.css">
+  
+  <link href="assets/style.css" rel="stylesheet">
 </head>
 
-<body>
-  <header xclass="border-bottom-1 d-flex justify-content-between">
-    <nav class="navbar bg-body-tertiary">
-      <div class="container-fluid">
-        <div class="start-header">
-          <a class="navbar-brand"><img src="assets/img/aviflow-logo.svg" width="64px" height="64px"><span class="align-middle fs-2 mx-3"><strong>Avi</strong>Flow</span></a>
-          <pre class="allign-top code d-inline-block fs-5 fw-bold">data-flow="Event -> Action -> Target"</pre>
-        </div>
-        <menu class="end-header">
-          <button class="btn btn-outline-secondary" aria-label="Toggle dark/light mode" data-flow="toogleTheme -|">
-            <i data-content="auto" class="bi bi-circle-half"></i>
-            <i data-content="dark" class="bi bi-sun-fill d-none"></i>
-            <i data-content="light" class="bi bi-moon-stars-fill d-none"></i>
-          </button>
-        </menu>
-      </div>
-    </nav>
-<!--
-    <div class="start-header">
-      <a href="#"></a>
-      <span>Docs</span>
-    </div>
+<body class="overflow-hidden"">
+
+  <header class=" navbar navbar-expand-lg fixed-top bg-body border-bottom shadow-sm">
+  <div class="container-fluid">
+    <a class="navbar-brand d-flex align-items-center" href="/"><img src="./assets/img/aviflow-logo.svg"
+        alt="AviFlow logo" width="32" height="32" class="me-2"><strong>AviFlow</strong></a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarContent">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item"><a class="nav-link active" href="/docs">Docs</a></li>
+        <li class="nav-item"><a class="nav-link" href="/docs/sections/example-01.html">Examples</a></li>
+      </ul>
+
+      <form class="mx-auto d-flex col-lg-4" role="search">
+        <input class="form-control" type="search" placeholder="Search documentation..." aria-label="Search">
+      </form>
+
+      <ul class="navbar-nav ms-auto align-items-center">
+        <li class="nav-item">
+          <a class="nav-link" href="https://github.com/aviato-soft/aviflow" target="_blank"><i class="bi bi-github me-2"></i><span class="d-lg-none">GitHub</span></a>
+        </li>
+        <li class="nav-item dropdown">
+          <button class="btn btn-link nav-link px-0 px-lg-2 py-2 dropdown-toggle d-flex align-items-center" id="theme-selector" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Toggle theme">
+          <i class="bi bi-circle-half me-2 icon-theme"></i><span class="d-lg-none" id="bd-theme-text">Toggle theme</span> 
+          </button> 
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="bd-theme-text">
+            <li>
+              <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="light" data-flow="changeTheme-|">
+              <i class="bi bi-sun-fill me-2 icon-theme"></i><span class="ms-3">Light</span><i class="bi bi-check2 ms-auto d-none"></i>
+              </button>
+            </li>
+            <li>
+              <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="dark" data-flow="changeTheme-|">
+                <i class="bi bi-moon-stars-fill me-2 icon-theme"></i><span class="ms-3">Dark</span><i class="bi bi-check2 ms-auto d-none"></i>
+              </button>
+            </li>
+            <li>
+              <button type="button" class="dropdown-item d-flex align-items-center active" data-bs-theme-value="auto" data-flow="changeTheme-|">
+                <i class="bi bi-circle-half me-2 icon-theme"></i><span class="ms-3">Auto</span><i class="bi bi-check2 ms-auto d-none"></i>
+              </button>
+            </li>
+          </ul>
+        
+<!--      <select class="form-select form-select-sm" data-flow="change->changeTheme-|" id="theme-selector">
+            <option value="auto"><i class="bi bi-circle-half"></i>Auto</option>
+            <option value="light"><i class="bi bi-sun-fill"></i>Light</option>
+            <option value="dark"><i class="bi bi-moon-stars-fill"></i>Dark</option>
+          </select>
 -->
     
-  </header>
-  <aside>
-    <nav><button class="btn btn-primary" data-flow="getSection -> main" data-section="test">Click to load section test</button></nav>
-  </aside>
-  <main class="m-3">
-    <h1>AviFlow Interactive Demo</h1>
-    <p>Demonstrating data-flow attribute handling with missing optional parameters</p>
-    <hr>
-    <div id="card">
-      <h3>Full Flow: Event -> Action -> Target</h3>
+        </li>
+      </ul>
     </div>
+  </div>
+  </header>
+
+  <div class="container-fluid wrapper-layout">
+    <div class="row h-100 flex-xl-nowrap">
+
+      <aside class="col-12 col-md-3 col-xl-2 border-end sidebar-nav pt-3 overflow-hidden">
+        <nav class="nav flex-column" data-role="main-menu"></nav>
+      </aside>
+
+      <main class="col-12 col-md-9 col-xl-10 main-content py-md-3 px-md-5" data-role="main-content"  data-bs-spy="scroll" data-bs-target="[data-role=main-menu]" data-bs-smooth-scroll="true" >
+        <div class="main-content-top">
+          <p class="text-center"><img src="assets/img/aviflow-logo.svg" alt="AviFlow logo" width="160" height="160"></p>
+          <h1 class="display-4 text-center"><b>Avi</b>Flow</h1>
+          <div class="lead text-center">
+            <p>Declarative data flow for the DOM.</p>
+            <p>Describe <strong><code>[ event -> action -> target ]</code></strong> in a single HTML attribute.</p>
+          </div>
+        </div>
+        <hr class="my-4">
+
+      </main>
+    </div>
+  </div>
+
+  <footer class="border-top py-4 mt-5 bg-body-tertiary">
+    <div class="container-fluid text-center">
+      <p class="mb-2">This project is open-sourced software licensed under the <strong>Apache 2.0
+          License</strong>.[cite: 1]</p>
+      <div class="d-flex justify-content-center gap-2">
+        <img alt="version" src="https://img.shields.io/badge/version-2.0.0-e33ecb">[cite: 1]
+        <img alt="module" src="https://img.shields.io/badge/module-ESM-blue">[cite: 1]
+        <img alt="dependencies" src="https://img.shields.io/badge/dependencies-0-brightgreen">[cite: 1]
+      </div>
+    </div>
+  </footer>
 
 
-
-    <pre class="m-3"><code class="language-html p-3">
-&lt;body&gt;
-&lt;!-- commented line --&gt;
-&lt;/body&gt;
-</code></pre>
-
-    <pre class="m-3"><code class="language-javascript p-3">
-document.addEventListener('DOMContentLoaded', () => {
-//some comments ...
-});
-</code></pre>
-  </main>
-  <footer></footer>
-
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
-    integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
-    crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.12.0/build/highlight.min.js"></script>
-
-  <!-- Library script -->
-  <!-- for debugging use: -->
-  <script type="module" src="../src/AviFlow.js"></script>
-  <!-- -->
-  <!-- for testing use: -- >
-  <script src="../../dist/aviflow.min.js"></script>
-  <! -- -- >
-  <script src="https://cdn.jsdelivr.net/npm/aviflow@1.1.5/dist/aviflow.min.js" crossorigin="anonymous" integrity="sha512-Wq2p7SfSecIiXY9s0Sc3HAZ66LrQbxadI9ckg+ISl6u4ZyNPRW7E6mHLTPnlBKhZMyAIKnkJ9PjiPblPA9mkGQ=="></script>
-  <! -- -->
-
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <!-- App logic: callbacks + initialization -->
   <script type="module" src="app.js"></script>
-  </body>
+
+</body>
 
 </html>

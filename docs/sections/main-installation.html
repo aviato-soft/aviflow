@@ -1,0 +1,95 @@
+<h2>Architecture and installation</h2>
+<p There are at least 3 ways to use AviFlow Javascript utilitiy:</p>
+<ol>
+<li><a href="#main-install-1_standalone-drop-in-traditional-script">As standalone drop in</a></li>
+<li><a href="#main-install-2_cdn-jsdelivr">Using CDN</a></li>
+<li><a href="#main-install-3_npm">Using npm</a></li>
+<li><a href="#main-install-3_local-es-module">Local ES Module</a></li>
+</ol>
+<div class="mb-5"></div>
+
+
+<h3 id="main-install-1_standalone-drop-in-traditional-script">1. Standalone Drop-in (Traditional Script)</h3>
+<p>Download the file directly from the repository, <a href="https://github.com/aviato-soft/aviflow">github.com/aviato-soft/aviflow</a>, and host it yourself:</p>
+<table class="table">
+  <thead>
+    <tr>
+      <th>File</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>dist/aviflow.min.js</code></td>
+      <td>Minified production build</td>
+    </tr>
+    <tr>
+      <td><code>dist/aviflow.min.map</code></td>
+      <td>Source map, for debugging the minified build</td>
+    </tr>
+  </tbody>
+</table>
+<code><pre class="bg-body-tertiary p-3 rounded fs-6">&lt;script src="/path/to/aviflow.min.js"&gt;&lt;/script&gt;
+</pre></code>
+<ul>
+  <li>Best for offline use, intranets, or when you cannot rely on a third-party CDN.</li>
+  <li>Keep the <code>.map</code> file next to the <code>.js</code> file so browser dev tools can show the original
+    source.</li>
+</ul>
+<div class="mb-5"></div>
+
+
+<h3 id="main-install-2_cdn-jsdelivr">2. Use CDN (jsDelivr) </h3>
+<p>This is the quickest way to try AviFlow, with no build step. Add the minified build to your page:</p>
+<code><pre class="bg-body-tertiary p-3 rounded fs-6">&lt;script src="https://cdn.jsdelivr.net/npm/aviflow@2.0.0/dist/aviflow.min.js" crossorigin="anonymous" integrity="sha512-Wq2p7SfSecIiXY9s0Sc3HAZ66LrQbxadI9ckg+ISl6u4ZyNPRW7E6mHLTPnlBKhZMyAIKnkJ9PjiPblPA9mkGQ=="&gt;&lt;/script&gt;</pre></code>
+<ul>
+  <li>The version is pinned (<code>@2.0.0</code>), so your page will not change unexpectedly when a new release is
+    published.</li>
+  <li>jsDelivr serves the file from a global CDN with caching and compression.</li>
+  <li>Best for prototypes, static pages and simple sites.</li>
+</ul>
+<div class="mb-5"></div>
+
+
+
+<h3 id="main-install-3_npm">3. npm </h3>
+<p>Install the package from the npm registry:</p>
+<code><pre class="bg-body-tertiary p-3 rounded fs-6">npm i aviflow</pre></code>
+<p>Then import it in your code:</p>
+<code><pre class="bg-body-tertiary p-3 rounded fs-6">import AviFlow from 'aviflow'</pre></code>
+<ul>
+  <li>Best for projects that use a bundler or build tool (Vite, webpack, Rollup, esbuild, etc.).</li>
+  <li>Version management is handled by your <code>package.json</code> and lock file.</li>
+</ul>
+<div class="mb-5"></div>
+
+
+
+<h3 id="main-install-4_local-es-module">4. Modern Application Setup (Local ES Module or CommonJS)</h3>
+<p>The <code>dist/</code> folder also contains builds for specific module systems. Each comes with its own source map.
+</p>
+<table class="table">
+  <thead>
+    <tr>
+      <th>File</th>
+      <th>Format</th>
+      <th>Typical use</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>aviflow.esm.js</code></td>
+      <td>ES module</td>
+      <td>Modern browsers (<code>&lt;script type="module"&gt;</code>) and bundlers that support tree-shaking</td>
+    </tr>
+    <tr>
+      <td><code>aviflow.cjs.js</code></td>
+      <td>CommonJS</td>
+      <td>Node.js and tooling that uses <code>require()</code></td>
+    </tr>
+  </tbody>
+</table>
+<code><pre class="bg-body-tertiary p-3 rounded fs-6">// ES module
+import AviFlow from './dist/aviflow.esm.js';</pre></code>
+<code><pre class="bg-body-tertiary p-3 rounded fs-6">// CommonJS
+const AviFlow = require('./dist/aviflow.cjs.js');</pre></code>

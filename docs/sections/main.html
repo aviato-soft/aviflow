@@ -1,0 +1,59 @@
+<section id="overview">
+  <h2>Overview[cite: 1]</h2>
+  <p><strong>AviFlow</strong> is a lightweight zero-dependency JavaScript utility that wires up behavior
+    directly in your markup.[cite: 1] Add a <strong><code>data-flow</code></strong> attribute to any element,
+    and <strong>AviFlow</strong> binds the event, runs the named action, and delivers the result to the target
+    you specify, with no glue code required.[cite: 1]</p>
+</section>
+
+<section id="features" class="mt-5">
+  <h2>Features[cite: 1]</h2>
+  <ul>
+    <li><strong>Declarative</strong>: behavior lives in HTML, next to the element it affects.[cite: 1]</li>
+    <li><strong>Simple grammar</strong>: one <code>-&gt;</code> delimiter, at most three parts.[cite: 1]</li>
+    <li><strong>Event modifiers</strong>: <code>.prevent</code> and <code>.stop</code> built in.[cite: 1]</li>
+    <li><strong>Sync or async actions</strong>: any function can be an action, including <code>async</code>
+      ones.[cite: 1]</li>
+    <li><strong>Extensible</strong>: register your own actions with a single call.[cite: 1]</li>
+    <li><strong>Scoped initialization</strong>: bind a whole document or just a freshly inserted fragment.[cite:
+      1]</li>
+    <li><strong>Strict validation</strong>: malformed flows are logged as warnings and never registered.[cite:
+      1]</li>
+    <li><strong>Micro-sized & Dependency-free</strong>: Written in pure, modern vanilla JavaScript.[cite: 1]
+    </li>
+  </ul>
+</section>
+
+<section id="installation" class="mt-5">
+  <h2>Installation[cite: 1]</h2>
+  <p>The quickest way to try AviFlow, with no build step. Add the minified build to your page:[cite: 1]</p>
+  <pre
+    class="bg-body-tertiary p-3 rounded"><code>&lt;script src="https://cdn.jsdelivr.net/npm/aviflow@2.0.0/dist/aviflow.min.js" crossorigin="anonymous"&gt;&lt;/script&gt;</code></pre>
+  <p>Or install the package from the npm registry:[cite: 1]</p>
+  <pre class="bg-body-tertiary p-3 rounded"><code>npm i aviflow</code></pre>
+</section>
+
+<section id="api" class="mt-5">
+  <h2>API reference[cite: 1]</h2>
+  <table class="table table-bordered mt-3">
+    <thead class="table-light">
+      <tr>
+        <th>Parameter[cite: 1]</th>
+        <th>Type[cite: 1]</th>
+        <th>Description[cite: 1]</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>actions</code>[cite: 1]</td>
+        <td><code>object</code>[cite: 1]</td>
+        <td>Map of <code>name → function</code>, merged with the built-in actions.[cite: 1]</td>
+      </tr>
+      <tr>
+        <td><code>options</code>[cite: 1]</td>
+        <td><code>object</code>[cite: 1]</td>
+        <td>Engine options (see below).[cite: 1]</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
