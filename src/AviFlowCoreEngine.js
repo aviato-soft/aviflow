@@ -73,6 +73,7 @@ export class AviFlowCoreEngine {
         }
 
         AviFlowCoreEngine.updateTargets(target, result);
+        this.flow.init(target);
         return result;
     }
 
@@ -171,7 +172,7 @@ export class AviFlowCoreEngine {
             return;
         }
 
-        targets.forEach((el) => AviElement.updateContent(el, content));
+        targets.forEach((el) => AviElement.setContent(el, content));
 
         return content;
     }

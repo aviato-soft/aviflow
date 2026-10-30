@@ -77,7 +77,20 @@ describe('AviElement / updateContent', () => {
     result = AviElement.updateContent(target, {html: {html: "html"}});
     expect(target.innerHTML).toBe('"{\\"html\\":\\"html\\"}"');
     expect(result).toBe(target);
-    
+  });
+
+
+  test('select element', () => {
+    document.body.innerHTML = `
+      <select id="target">
+      <option value="1" selected>one<option>
+      <option value="2">two</option>
+      </select>`;
+    target = document.getElementById('target');
+    result = AviElement.updateContent(target, 2);
+    expect(target.value).toBe("2");
   })
+
+
 
 });

@@ -14,31 +14,27 @@ export class AviElement {
         'hidden-aria': true
     });
 
-    
+
     static #DEFAULTS_PENDING = Object.freeze({
         'pending-class': 'pending',
         'pending-opacity': 0.6,
         'pending-pointer': 'none',
         'pending-disabled': true
     });
-    
+
 
     /** Form control tags that support the `disabled` property. */
-    static #FORM_TAGS = new Set(['INPUT', 'BUTTON', 'SELECT', 'TEXTAREA']);
+    static #FORM_TAGS = new Set(['INPUT', 'BUTTON', 'SELECT', 'TEXTAREA', 'FIELDSET']);
 
-    
+
     /** Option values that mean "do not apply". */
     static #OFF = new Set([false, 'false', undefined, null]);
 
-    
+
     /** `getParams` options used to read `data-opt-*` options: never include form fields. */
     static #OPTIONS_ONLY = Object.freeze({ form: false });
 
-    
-    /** Saved state of elements currently in pending state. */
-    static #pending = new WeakMap();
 
-    
     /**
      * Converts a class option value into a list of class names.
      * Supports several classes separated by whitespace; "off" values give an empty list.
@@ -50,7 +46,7 @@ export class AviElement {
         if (AviElement.#OFF.has(value)) return [];
         return String(value).split(/\s+/).filter(Boolean);
     }
-    
+
 
     /**
      * Builds the full data-attribute prefix.
@@ -65,13 +61,18 @@ export class AviElement {
     }
 
 
+    /** Saved state of elements currently in pending state. */
+    static #pending = new WeakMap();
+
+
     /**
     * Copies attributes starting with `fullPrefix` into `target` (prefix stripped).
     */
     static #readPrefixed(el, fullPrefix, target) {
+        const fullPrefixLen = fullPrefix.length;
         for (const attr of el.attributes) {
             if (attr.name.startsWith(fullPrefix)) {
-                target[attr.name.slice(fullPrefix.length)] = attr.value;
+                target[attr.name.slice(fullPrefixLen)] = attr.value;
             }
         }
     }
@@ -93,7 +94,7 @@ export class AviElement {
 
         while (current && !visited.has(current)) {
             visited.add(current);
-            chain.push(current);
+            chain.unshift(current);
 
             const selector = current.dataset?.parent;
             if (!selector) break;
@@ -105,20 +106,140 @@ export class AviElement {
                 break;
             }
         }
-        return chain.reverse();
+        return chain;
+    }
+
+    /**
+     * Applies the optional `AviElement.sanitizer` to an HTML string.
+     *
+     * @param {string} html
+     * @returns {string}
+     */
+    static #sanitize(html) {
+        return AviElement.sanitizer ? AviElement.sanitizer(html) : html;
     }
 
 
     /**
-     * Retrieves all dataset properties for the specified element.
-     * If the element possesses a ``data-parent`` attribute, properties are inherited
-     * from the parent chain. The element's own values take precedence.
+     * Serializes a value to JSON without throwing (circular structures,
+     * BigInt). Falls back to `String(value)`.
      *
-     * @param {HTMLElement} `element` The HTML element to analyze.
-     * @param {boolean} [useClosest=false] 
-     * If true and the element is not a form, use the form it belongs to 
-     * `element.form`, else the closest ancestor `<form>`.
-     * @returns {Object} A merged object containing all accessible dataset properties.
+     * @param {*} value Value to serialize.
+     * @returns {string|undefined}
+     */
+    static #toJson(value) {
+        try {
+            return JSON.stringify(value);
+        } catch (err) {
+            console.warn(
+                '[AviFlow.tools.element.parseContent] Cannot stringify',
+                err
+            );
+            return String(value);
+        }
+    }
+
+
+    /**
+    * Tells whether `setContent` must write `element.value`:
+    * input, textarea, select and form-associated custom elements.
+    * (Not a plain `'value' in element` check: that would also match
+    * `<button>`, `<li>`, `<option>`, `<meter>`... where `value` is not
+    * the displayed content.)
+    *
+    * @param {Element} el
+    * @returns {boolean}
+    */
+    static #usesValue(el) {
+        return el instanceof HTMLInputElement
+            || el instanceof HTMLTextAreaElement
+            || el instanceof HTMLSelectElement
+            || (el.constructor?.formAssociated === true && 'value' in el);
+    }
+
+
+    /**
+     * Appends content (see `parseContent`) to the end of the element's
+     * existing content, which is preserved. The element acts as the parent
+     * of the new content. No value handling is applied: the content is
+     * always added as nodes, whatever the type of the element.
+     *
+     * - `Node`: a clone is appended.
+     * - HTML: inserted after the last child (`insertAdjacentHTML`, so
+     *   existing children are not re-parsed), through
+     *   `AviElement.sanitizer` if defined.
+     * - Text: appended as a text node.
+     * - Empty content leaves the element unchanged.
+     *
+     * @param {HTMLElement} element The element that receives the content.
+     * @param {*} content The data to append.
+     * @returns {HTMLElement|null} The element, or null if invalid.
+     */
+    static appendContent(element, content) {
+        if (!(element instanceof Element)) return null;
+
+        const parsed = AviElement.parseContent(content);
+
+        if (parsed.kind === 'node') {
+            element.append(parsed.value.cloneNode(true));
+            return element;
+        }
+
+        const value = parsed.value;
+        if (value === '') return element;
+
+        if (parsed.kind === 'html') {
+            element.insertAdjacentHTML('beforeend', AviElement.#sanitize(value));
+        } else {
+            element.append(value);
+        }
+
+        return element;
+    }
+
+/*
+     * Appends content (see `parseContent`) to the end of the element's
+     * existing content, which is preserved.
+     *
+     * - `Node`: a clone is appended.
+     * - HTML: inserted after the last child (`insertAdjacentHTML`, so
+     *   existing children are not re-parsed), through `AviElement.sanitizer`
+     *   if defined.
+     * - Text: appended as a text node.
+     * - input, textarea and form-associated custom elements: the text is
+     *   concatenated to the current `value`. A file input is left untouched.
+     * - Empty content leaves the element unchanged.
+     *
+     * @param {HTMLElement} element The element that receives the content.
+     * @param {*} content The data to append.
+     * @returns {HTMLElement|null} The element, or null if invalid.
+     * /
+    static appendContentToParent(element, content) {
+        if (!(element instanceof Element)) return null;
+
+        const parent = element.parentElement;
+        if (!parent) {
+            console.warn(
+                '[AviFlow.tools.element.appendContent] Element has no parent'
+            );
+            return null;
+        }
+
+        return AviElement.appendContent(parent, content);
+    }
+*/
+
+
+    /**
+     * Retrieves all dataset properties for the specified element.
+     * If the element possesses a `data-parent` attribute, properties are 
+     * inherited from the parent chain. The element's own values take 
+     * precedence.
+     *
+     * @param {HTMLElement} 
+     *  element The HTML element to analyze.
+     * @returns {Object} 
+     *  A merged object containing all accessible dataset properties.
      */
     static getDataset(element) {
         if (!element?.dataset) return {};
@@ -136,14 +257,14 @@ export class AviElement {
      * By default the element must be an `HTMLFormElement` (strict mode, 
      * as used by `getParams`).
      *
-     * @param {HTMLFormElement|HTMLElemen} 
+     * @param {HTMLFormElement|HTMLElement} 
      * `element` The form element from which to retrieve parameters.
      * @param {boolean} [useClosest=false] 
-     * If true and the element is not a form, use the form it belongs to 
-     * (`element.form`, else the closest ancestor `<form>`).
+     *  If true and the element is not a form, use the form it belongs to 
+     *  (`element.form`, else the closest ancestor `<form>`).
      * @returns {Object.<string, string|File|Array<string|File>>} 
-     * An object mapping form field names to their values, or an array of
-     * values if the field is duplicated.
+     *  An object mapping form field names to their values, or an array of
+     *  values if the field is duplicated.
      */
     static getFormParams(element, useClosest = false) {
         const formParams = {};
@@ -153,7 +274,7 @@ export class AviElement {
         const formElement = element instanceof HTMLFormElement
             ? element
             : (useClosest ? (element.form ?? element.closest?.('form')) : null);
-        //            : (useClosest ? element.closest?.('form') : false);
+
         if (!formElement) return formParams;
 
         const formData = new FormData(formElement);
@@ -177,18 +298,19 @@ export class AviElement {
 
     /**
      * Retrieves parameters from the element and its `data-parent` ancestors:
-     * `data-{prefix}-*` attributes plus fields of forms (strict: only elements that
-     * are themselves a `<form>` contribute fields).
+     * `data-{prefix}-*` attributes plus fields of forms (strict: only elements
+     * that are themselves a `<form>` contribute fields).
      *
      * Priority (highest first):
      * 1. `data-{prefix}-*` of the element itself
      * 2. `data-{prefix}-*` of each ancestor, nearest first
-     * 3. form fields of the element and its ancestors that are forms, nearest first
+     * 3. form fields of the element and its ancestors that are forms, nearest 
+     *  first
      *
      * @param {HTMLElement} element 
-     * The element from which to retrieve parameters.
+     *  The element from which to retrieve parameters.
      * @param {string} [prefix='param'] 
-     * Attribute prefix (without `data-`).
+     *  Attribute prefix (without `data-`).
      * @param {Object} [opt={}] Options:
      *  - `parent` {boolean} Include the `data-parent` chain. Default: true.
      *  - `form` {boolean} Include form fields. Default: true.
@@ -216,6 +338,56 @@ export class AviElement {
         }
 
         return { ...formParams, ...dataParams };
+    }
+
+
+    /**
+     * Normalizes content (usually an ajax response) into a descriptor, so
+     * it can be inserted by `setContent` or `appendContent`.
+     *
+     * Result `{ kind, value }`:
+     * - `Node`                    -> `{ kind: 'node', value: node }`
+     * - string                    -> `{ kind: 'html', value: string }`
+     * - `{ html: ... }` object    -> `{ kind: 'html', value: string }`
+     *   (`null` / `undefined` html gives an empty string, a non-string
+     *   html is converted to JSON)
+     * - other objects             -> `{ kind: 'text', value: json }`
+     * - numbers, booleans, others -> `{ kind: 'text', value: String(x) }`
+     * - `null` / `undefined`      -> `{ kind: 'text', value: '' }`
+     *
+     * Plain strings are HTML for backward compatibility. HTML is NOT
+     * sanitized here: `setContent` and `appendContent` apply
+     * `AviElement.sanitizer` (if defined) when they insert it.
+     *
+     * @param {*} content The data to parse.
+     * @returns {{kind: 'node'|'html'|'text', value: Node|string}}
+     */
+    static parseContent(content) {
+        if (content instanceof Node) {
+            return { kind: 'node', value: content };
+        }
+
+        if (typeof content === 'string') {
+            return { kind: 'html', value: content };
+        }
+
+        if (content !== null && typeof content === 'object') {
+            if (Object.hasOwn(content, 'html')) {
+                const html = content.html;
+                return {
+                    kind: 'html',
+                    value: (html == null || typeof html === 'string')
+                        ? (html ?? '')
+                        : String(AviElement.#toJson(html) ?? '')
+                };
+            }
+            return {
+                kind: 'text',
+                value: String(AviElement.#toJson(content) ?? '')
+            };
+        }
+
+        return { kind: 'text', value: String(content ?? '') };
     }
 
 
@@ -275,7 +447,14 @@ export class AviElement {
             }
         }
 
-        for (const el of element.querySelectorAll('[data-content]')) {
+        const children = Array.from(element.querySelectorAll('[data-content]'));
+        /*.filter(el => {
+            const parentContainer = el.parentElement?.closest('[data-content]');
+            return !parentContainer || parentContainer === element || element.contains(parentContainer);
+        });
+        */
+
+        for (const el of children) {
             const hide = !activeNames.has(el.dataset.content);
 
             for (const c of hiddenClasses) el.classList.toggle(c, hide);
@@ -288,6 +467,52 @@ export class AviElement {
                 }
             }
         }
+        return element;
+    }
+
+
+    /**
+     * Replaces the content of the element with the given content (see
+     * `parseContent`), according to the element type.
+     *
+     * - `Node`: replaces the children with a clone of the node.
+     * - Value elements (input, textarea, select, form-associated custom
+     *   elements): sets `value`. A file input only accepts an empty string.
+     * - HTML: set as `innerHTML` (through `AviElement.sanitizer` if defined).
+     * - Text: set as `textContent`, never parsed as HTML.
+     * - `null` / `undefined`: empty string.
+     *
+     * @param {HTMLElement} element The target HTML element.
+     * @param {*} content The data to be set into the element.
+     * @returns {HTMLElement|null} The modified element, or null if invalid.
+     */
+    static setContent(element, content) {
+        if (!(element instanceof Element)) return null;
+
+        const parsed = AviElement.parseContent(content);
+
+        if (parsed.kind === 'node') {
+            element.replaceChildren(parsed.value.cloneNode(true));
+            return element;
+        }
+
+        const value = parsed.value;
+
+        if (AviElement.#usesValue(element)) {
+            if (element.type === 'file' && value !== '') {
+                console.warn(
+                    '[AviFlow.tools.element.setContent] ' +
+                    'A file input value can only be cleared'
+                );
+                return element;
+            }
+            element.value = value;
+        } else if (parsed.kind === 'html') {
+            element.innerHTML = AviElement.#sanitize(value);
+        } else {
+            element.textContent = value;
+        }
+
         return element;
     }
 
@@ -324,7 +549,7 @@ export class AviElement {
             : Boolean(isPending) && !AviElement.#OFF.has(isPending);
 
         if (enter) {
-            if (saved) return element; // already pending
+            if (saved) return element;
 
             const options = {
                 ...AviElement.#DEFAULTS_PENDING,
@@ -348,7 +573,7 @@ export class AviElement {
                 state.style['pointer-events'] = element.style.getPropertyValue('pointer-events');
                 element.style.setProperty('pointer-events', String(options['pending-pointer']));
             }
-            if (on(options['pending-disabled']) && AviElement.#FORM_TAGS.has(element.tagName)) {
+            if (on(options['pending-disabled']) && (AviElement.#FORM_TAGS.has(element.tagName) || 'disabled' in element)) {
                 state.disabled = element.disabled;
                 element.disabled = true;
             }
@@ -360,12 +585,13 @@ export class AviElement {
         } else if (saved) {
             for (const prop in saved.style) {
                 const prev = saved.style[prop];
-                prev ? element.style.setProperty(prop, prev) : element.style.removeProperty(prop);
+                prev
+                    ? element.style.setProperty(prop, prev)
+                    : element.style.removeProperty(prop);
             }
             if (saved.disabled !== undefined) element.disabled = saved.disabled;
             if (saved.cls.length) element.classList.remove(...saved.cls);
 
-            // Restore a pre-existing aria-busy, otherwise remove ours
             if (saved.ariaBusy !== null) {
                 element.setAttribute('aria-busy', saved.ariaBusy);
             } else {
@@ -374,7 +600,6 @@ export class AviElement {
             AviElement.#pending.delete(element);
 
         } else {
-            // Nothing saved (e.g. pending set externally): just clean up markers
             const options = {
                 ...AviElement.#DEFAULTS_PENDING,
                 ...AviElement.getParams(element, 'opt', AviElement.#OPTIONS_ONLY),
@@ -389,57 +614,17 @@ export class AviElement {
     }
 
     /**
-     * Updates the content of the element based on its type and the provided data.
-     * Content can be HTML, string, or object structures.
+     * Updates the content of the element.
      *
-     * - `Node`: replaces the children with a clone of the node.
-     * - Value elements (input, textarea, select): sets `value`.
-     * - Strings and `{ html }` objects: set as HTML (through `AviElement.sanitizer` if defined).
-     * - Other values (plain objects, numbers, booleans): converted to text (objects as JSON)
-     *   and set as plain text, never parsed as HTML.
-     * - `null` / `undefined` (also as `html`): empty string.
-     *
+     * @deprecated Use `AviElement.setContent` (replace the content) or
+     *  `AviElement.appendContent` (add to the content). Kept as an alias of
+     *  `setContent` for backward compatibility.
      * @param {HTMLElement} element The target HTML element.
-     * @param {*} content The data to be inserted into the element.
+     * @param {*} content The data to be set into the element.
      * @returns {HTMLElement|null} The modified element, or null if invalid.
      */
     static updateContent(element, content) {
-        if (!(element instanceof Element)) return null;
-
-        if (content instanceof Node) {
-            element.replaceChildren(content.cloneNode(true));
-            return element;
-        }
-
-        let parsedContent = content;
-        let isHtml = typeof content === 'string'; // plain strings stay HTML for backward compatibility
-
-        if (content !== null && typeof content === 'object') {
-            if (Object.hasOwn(content, 'html')) {
-                isHtml = true;
-                parsedContent = (content.html == null || typeof content.html === 'string')
-                    ? content.html
-                    : JSON.stringify(content.html);
-            } else {
-                parsedContent = JSON.stringify(content);
-            }
-        }
-
-        // Normalized assignment
-        const value = String(parsedContent ?? '');
-
-        if (
-            element instanceof HTMLInputElement ||
-            element instanceof HTMLTextAreaElement ||
-            element instanceof HTMLSelectElement) {
-            element.value = value;
-        } else if (isHtml) {
-            element.innerHTML = AviElement.sanitizer ? AviElement.sanitizer(value) : value;
-        } else {
-            element.textContent = value;
-        }
-
-        return element;
+        return AviElement.setContent(element, content);
     }
 }
 

@@ -18,6 +18,7 @@ describe('AviElement / togglePendingState', () => {
 
   
   test('should just works...', () => {
+    //state change to pending:
     result = AviElement.togglePendingState(container);
     expect(container.style.opacity).toBe("0.6");
     expect(container.style.pointerEvents).toBe("none");
@@ -25,6 +26,7 @@ describe('AviElement / togglePendingState', () => {
     expect(container.classList.contains('pending')).toBe(true);
     expect(result).toBe(container);
 
+    //state pending removed:
     result = AviElement.togglePendingState(container);
     expect(container.style.opacity).toBe("");
     expect(container.style.pointerEvents).toBe("");
@@ -32,6 +34,7 @@ describe('AviElement / togglePendingState', () => {
     expect(container.classList.contains('pending')).toBe(false);
     expect(result).toBe(container);
 
+    //state change to pending:
     result = AviElement.togglePendingState(button);
     expect(button.style.opacity).toBe("0.6");
     expect(button.style.pointerEvents).toBe("none");
@@ -39,6 +42,7 @@ describe('AviElement / togglePendingState', () => {
     expect(button.classList.contains('pending')).toBe(true);
     expect(result).toBe(button);
 
+    //state pending removed:
     result = AviElement.togglePendingState(button);
     expect(button.style.opacity).toBe("");
     expect(button.style.pointerEvents).toBe("");

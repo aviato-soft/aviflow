@@ -238,4 +238,21 @@ describe('AviElement / setActiveContent', () => {
     expect(result).toBe(container);
   });
 
+
+  test('version 009', () => {
+    document.body.innerHTML = `
+      <section data-content="step1">
+        <div id="tabs">
+          <div data-content="x"></div>
+          <div data-content="y"></div>
+        </div>
+      </section>
+    `;
+    container = document.getElementById('tabs');
+    result = AviElement.setActiveContent(container, 'x');
+    expect(container.querySelector('[data-content="x"]').classList.contains('hidden')).toBe(false);
+    expect(container.querySelector('[data-content="y"]').classList.contains('hidden')).toBe(true);
+  })
+
+  
 });

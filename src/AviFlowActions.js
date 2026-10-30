@@ -16,7 +16,7 @@ export class AviFlowActions {
    *
    * @param {HTMLElement} ``element`` The element containing the URL and request configuration.
    * @param {Object} [``opt``={}] Optional configuration parameters for the HTTP request.
-   * @returns {Promise<Object>} A promise that resolves with the parsed response data, or rejects on error.
+   * @returns {Promise<Object|string>} A promise that resolves with the parsed response data (JSON object or HTML string), or rejects on error.
    */
   static fetchData(element, opt = {}) {
     let data = null;
@@ -39,19 +39,6 @@ export class AviFlowActions {
       ...opt
     }
 
-/*
-    const params = AviElement.getParams(element);
-    const headers = new Headers({
-      'X-Requested-With': 'XMLHttpRequest'
-    })
-    const method = (elementDataset.method || 'POST').toUpperCase();
-    let url = elementDataset.url || '/';
-/*
-    const fetchOptions = {
-      headers: headers,
-      method: method
-    }
-  */
     if (options.method === 'GET' || options.method === 'HEAD') {
       if (Object.keys(options.params).length > 0) {
         options.url += (options.url.includes('?') ? '&' : '?') 
@@ -79,18 +66,34 @@ export class AviFlowActions {
         headers: options.headers,
         method: options.method
       })
-        .then(response => response.json())
+        .then(response => {
+          const contentType = response.headers.get('content-type');
+          
+          // Check if content-type suggests HTML
+          if (contentType && contentType.includes('text/html')) {
+            return response.text();
+          } 
+          // Otherwise, attempt to parse as JSON
+          return response.json();
+        })
         .then(data => {
-          if (data.success) {
+          // If the result is a string, it's HTML content. Return it directly.
+          if (typeof data === 'string') {
+            resolve(data);
+          } else if (data.success) {
             resolve(data);
           } else {
-            reject(data.error || 'Error fetching data');
+            reject(data.error || '[AviFlow.action.fetch] Error fetching data');
           }
         })
-        .catch(err => reject(err))
+        .catch(err => {
+          // If the error is due to response.json() failing (e.g. non-JSON response),
+          // and we haven't handled it as HTML yet, we might need to check if it's text.
+          // However, for simplicity, we pass the original error here.
+          reject(err);
+        })
         .finally(() => {
           AviElement.togglePendingState(element, false);
-          return data;
         });
     });
   }
