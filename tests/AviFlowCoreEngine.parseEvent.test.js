@@ -15,19 +15,19 @@ describe('AviFlowCoreEngine / parseEvent', () => {
   test('should return the result of: click.prevent.stop', () => {
     testString = 'click.prevent.stop';
     result = flowCoreEngine.parseEvent(testString);
-    expect(result).toStrictEqual({ event: 'click', prevent: true, stop: true });
+    expect(result).toStrictEqual({ event: 'click', prevent: true, stop: true, onWindow: false, passive: false });
   });
 
   test('should return the result of: ..', () => {
     testString = '..';
     result = flowCoreEngine.parseEvent(testString);
-    expect(result).toStrictEqual({ event: 'click', prevent: false, stop: false });
+    expect(result).toStrictEqual({ event: 'click', prevent: false, stop: false, onWindow: false, passive: false });
   });
 
   test('should return the result of: ""', () => {
     testString = "";
     result = flowCoreEngine.parseEvent(testString);
-    expect(result).toStrictEqual({ event: 'click', prevent: false, stop: false });
+    expect(result).toStrictEqual({ event: 'click', prevent: false, stop: false, onWindow: false, passive: false });
   });
 
 });

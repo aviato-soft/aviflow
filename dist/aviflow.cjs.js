@@ -547,27 +547,40 @@ var AviFlowCoreEngine = class _AviFlowCoreEngine {
   }
   controller(element) {
     if (!element?.dataset) return;
-    const flowConfig = _AviFlowCoreEngine.parseFlow(element.dataset.flow);
-    if (!flowConfig) return;
-    const { event, action, target, prevent, stop } = flowConfig;
+    const flows = _AviFlowCoreEngine.parseFlow(element.dataset.flow);
+    if (!flows) return;
+    const byKey = /* @__PURE__ */ new Map();
+    for (const f of flows) {
+      const key = `${f.onWindow ? "window" : "element"}:${f.event}`;
+      if (!byKey.has(key)) byKey.set(key, { event: f.event, onWindow: f.onWindow, passive: f.passive, list: [] });
+      const group = byKey.get(key);
+      group.passive = group.passive || f.passive;
+      group.list.push(f);
+    }
     let eventConfigs = this.boundElements.get(element);
     if (!eventConfigs) {
       eventConfigs = /* @__PURE__ */ new Map();
       this.boundElements.set(element, eventConfigs);
     }
-    if (eventConfigs.has(event)) {
-      const config2 = eventConfigs.get(event);
-      config2.action = action;
-      config2.target = target;
-      config2.prevent = prevent;
-      config2.stop = stop;
-      return;
+    for (const [key, entry] of eventConfigs) {
+      if (!byKey.has(key)) entry.flows = [];
     }
-    const config = { action, target, prevent, stop };
-    eventConfigs.set(event, config);
-    element.addEventListener(event, (e) => {
-      this.core.eventHandler(element, e, config.action, config.target, config.prevent, config.stop);
-    });
+    for (const [key, group] of byKey) {
+      const existing = eventConfigs.get(key);
+      if (existing) {
+        existing.flows = group.list;
+        continue;
+      }
+      const entry = { flows: group.list };
+      eventConfigs.set(key, entry);
+      const host = group.onWindow ? window : element;
+      const options = group.passive ? { passive: true } : void 0;
+      host.addEventListener(group.event, (e) => {
+        for (const f of entry.flows) {
+          this.core.eventHandler(element, e, f.action, f.target, f.prevent, f.stop);
+        }
+      }, options);
+    }
   }
   eventHandler(element, event, actionName, target, prevent, stop) {
     if (prevent && typeof event?.preventDefault === "function") event.preventDefault();
@@ -580,7 +593,7 @@ var AviFlowCoreEngine = class _AviFlowCoreEngine {
     let result;
     const onError = (err) => console.error(`[AviFlow.core.eventHandler] Error on action "${actionName}"`, err);
     try {
-      result = actionFn(element, this.flow);
+      result = actionFn(element, this.flow, event);
     } catch (err) {
       onError(err);
       return;
@@ -601,24 +614,44 @@ var AviFlowCoreEngine = class _AviFlowCoreEngine {
   * @returns {{event: string, prevent: boolean, stop: boolean}} An object defining the event and modifiers.
   */
   static parseEvent(strEvent) {
-    const parts = strEvent.split(".").map((s) => s.trim());
-    let event = (parts.length === 1 ? strEvent : parts[0]) || "click";
-    let prevent = strEvent.includes(".prevent");
-    let stop = strEvent.includes(".stop");
-    return { event, prevent, stop };
+    const [name, ...mods] = strEvent.split(".").map((s) => s.trim());
+    return {
+      event: name || "click",
+      prevent: mods.includes("prevent"),
+      stop: mods.includes("stop"),
+      passive: mods.includes("passive"),
+      onWindow: mods.includes("window")
+    };
   }
   /**
-       * Parses a flow string and decomposes it into its constituent parts:
-       * the triggering event, the action identifier, and the target selector.
-       * The flow syntax supports three formats:
-       * 1. ``event->action``: Triggers action on event.
-       * 2. ``event->action->target``: Executes action and applies result to target selector.
-       * 3. ``action->target``: Triggers action directly, applying result to target selector.
-       *
-       * @param {string} ``flowString`` The flow definition string.
-       * @returns {Object|null} An object containing `event`, `action`, `target`, `prevent`, and `stop` flags, or null if parsing fails.
-       */
+   * Parses a flow definition. Supports a single flow or several flows,
+   * each wrapped in square brackets:
+   *   "event -> action -> target"
+   *   "[event1 -> action1 -> target1][event2 -> action2 -> target2]"
+   *
+   * Each flow follows the formats:
+   * 1. ``event->action``
+   * 2. ``event->action->target``
+   * 3. ``action->target``
+   * (end with "-|" for no target)
+   *
+   * @param {string} flowString The flow definition string.
+   * @returns {Array<Object>|null} Array of `{event, action, target, prevent, stop}`, or null if nothing valid was parsed.
+   */
   static parseFlow(flowString) {
+    if (!flowString || typeof flowString !== "string") return null;
+    const parts = _AviFlowCoreEngine.splitFlows(flowString);
+    if (!parts) return null;
+    const flows = parts.map((p) => _AviFlowCoreEngine.parseSingleFlow(p)).filter(Boolean);
+    return flows.length ? flows : null;
+  }
+  /**
+   * Parses one flow (no surrounding brackets).
+   *
+   * @param {string} flowString
+   * @returns {Object|null}
+   */
+  static parseSingleFlow(flowString) {
     if (!flowString || typeof flowString !== "string") return null;
     let src = flowString.trim();
     const noTarget = src.endsWith("-|");
@@ -629,7 +662,7 @@ var AviFlowCoreEngine = class _AviFlowCoreEngine {
       console.warn(
         noTarget ? '[AviFlow.core.parseFlow] Too many parts before "-|" (max: event -> action -|)' : '[AviFlow.core.parseFlow] Too many "->" parts (max: event -> action -> target)'
       );
-      return;
+      return null;
     }
     let eventRaw = "click";
     let action;
@@ -646,15 +679,62 @@ var AviFlowCoreEngine = class _AviFlowCoreEngine {
     }
     if (!action) {
       console.warn('[AviFlow.core.parseFlow] Missing "action"');
-      return;
+      return null;
     }
     if (!noTarget && parts.length > 1 && !target) {
       console.warn(`[AviFlow.core.parseFlow] Empty target: end the flow with "-|" when there is no target`);
-      return;
+      return null;
     }
     if (eventRaw.startsWith(".")) eventRaw = "click" + eventRaw;
-    const { event, prevent, stop } = _AviFlowCoreEngine.parseEvent(eventRaw);
-    return { event, action, target, prevent, stop };
+    const { event, prevent, stop, passive, onWindow } = _AviFlowCoreEngine.parseEvent(eventRaw);
+    return { event, action, target, prevent, stop, passive, onWindow };
+  }
+  /**
+   * Splits a data - flow string into individual flow strings.
+   * - "event -> action -> target"            => ["event -> action -> target"]
+  * - "[e1 -> a1 -> t1][e2 -> a2 -> t2]"     => ["e1 -> a1 -> t1", "e2 -> a2 -> t2"]
+      * Brackets inside a group(e.g.attribute selectors) are respected via depth tracking.
+   *
+   * @param { string } flowString
+  * @returns { string[] | null }
+   */
+  static splitFlows(flowString) {
+    const src = flowString.trim();
+    if (!src.startsWith("[")) return [src];
+    const result = [];
+    let depth = 0;
+    let start = -1;
+    let quote = null;
+    for (let i = 0; i < src.length; i++) {
+      const ch = src[i];
+      if (quote) {
+        if (ch === quote) quote = null;
+        continue;
+      }
+      if (depth === 0) {
+        if (ch === "[") {
+          start = i + 1;
+          depth++;
+        } else if (!/\s/.test(ch)) {
+          console.warn(`[AviFlow.core.parseFlow] Unexpected "${ch}" between flow groups`);
+          return null;
+        }
+        continue;
+      }
+      if (ch === '"' || ch === "'") {
+        quote = ch;
+      } else if (ch === "[") {
+        depth++;
+      } else if (ch === "]") {
+        depth--;
+        if (depth === 0) result.push(src.slice(start, i));
+      }
+    }
+    if (depth !== 0 || quote) {
+      console.warn("[AviFlow.core.parseFlow] Unbalanced brackets or quotes in multi-flow definition");
+      return null;
+    }
+    return result;
   }
   /**
        * Updates the specified set of target elements with the provided content.
