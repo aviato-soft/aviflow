@@ -1,0 +1,14 @@
+<h3>AviFlow.tools.element.getParams(element, prefix, opt)</h3>
+<span class="sig">AviFlow.tools.element.getParams(element, prefix = 'param', opt = {}) -> Object</span>
+<p>Collects <code>data-{prefix}-*</code> attributes (prefix stripped; attribute names, so lowercase/kebab-case) plus form fields.</p>
+<table>
+<tr><th>Param</th><th>Description</th></tr>
+<tr><td><code>prefix</code></td><td class="code">Default <code>param</code>. Some characters like <code>-</code> are stripped.</td></tr>
+<tr><td><code>opt.parent</code></td><td class="code">Include the <code>data-parent</code> chain. Default <code>true</code>.</td></tr>
+<tr><td><code>opt.form</code></td><td class="code">Include form fields. Default <code>true</code>.</td></tr>
+</table>
+<h4>Priority (highest first)</h4>
+<ol><li><code>data-{prefix}-*</code> of the element</li><li>…of each ancestor, nearest first</li><li>Form fields of the element and ancestors that are themselves <code>&lt;form&gt;</code>, nearest first</li></ol>
+<pre><code>&lt;button data-param-id="7" data-param-sort="asc" data-opt-pending-class="busy"&gt;
+AviFlow.tools.element.getParams(btn)          // { id: "7", sort: "asc" }
+AviFlow.tools.element.getParams(btn, 'opt')   // { "pending-class": "busy" }</code></pre>

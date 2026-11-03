@@ -1,0 +1,9 @@
+<h3>AviFlow.tools.element.getDataset(element)</h3>
+<span class="sig">AviFlow.tools.element.getDataset(element: HTMLElement) -> Object</span>
+<p>
+  Merged <code>dataset</code> of the element and its <code>data-parent</code> chain.<br>
+  The element's own values win. <code>data-parent</code> holds a CSS selector, 
+  resolved first with <code>parentElement.closest(selector)</code>, 
+  then <code>document.querySelector(selector)</code>.<br>
+  The chain is resolved iteratively with cycle protection; 
+  invalid selectors log a warning and stop the chain.</p>

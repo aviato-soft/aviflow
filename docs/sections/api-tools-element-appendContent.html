@@ -1,0 +1,19 @@
+<h2>AviFlow.tools.element</h2>
+<p>
+  Static DOM utilities (class <code>AviElement</code>, exposed as <code>AviFlow.tools.element</code>). <br>
+  Convention: methods that act on an element return it, or <code>null</code> if the input is not a valid element. <br>
+  Getters return plain objects (<code>{}</code> when empty).
+</p>
+<div class="separator"></div>
+
+<h3>AviFLow.tools.element.appendContent(element, content</h3>
+<span class="sig">AviFlow.tools.element.appendContent(element, content) -> HTMLElement | null</span>
+<p>Adds content after existing children, never touching the element value.<br>
+<p>Possible cases based on content type:</p>
+<table>
+<tr><th>Content</th><th>Action</th></tr>
+<tr><td>Node</td><td class="code">clone appended</td></tr>
+<tr><td>HTML</td><td class="code">insertAdjacentHTML('beforeend') through the sanitizer</td></tr>
+<tr><td>text</td><td class="code">text node is appended</td></tr>
+<tr><td>empty content</td><td class="code">unchanged</td></tr>
+</table>

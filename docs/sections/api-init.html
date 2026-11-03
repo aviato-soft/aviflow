@@ -1,0 +1,7 @@
+<h3>init(root)</h3>
+<span class="sig">init(root = this.option.root) → AviFlow</span>
+<p>Finds every <code>[data-flow]</code> element under <code>root</code> (including <code>root</code> itself if it matches) and hands each to the core controller.<br>
+Returns <code>this</code>; does nothing if <code>root</code> is falsy.<br>
+Use it for content added dynamically.</p>
+<pre><code>const flow = new AviFlow({}, { autoInit: false });
+flow.init(document.querySelector('#panel'));</code></pre>

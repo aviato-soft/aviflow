@@ -1,0 +1,9 @@
+<h3 id="setContent">setContent(element, content)</h3>
+<span class="sig">AviFlow.tools.element.setContent(element, content) -> HTMLElement | null</span>
+<p>Replaces content according to element type:</p>
+<ul>
+<li class="code"><code>Node -> replaceChildren(clone)</code>.</li>
+<li class="code">input / textarea / select / form-associated custom element -> sets <code>value</code>. A file input accepts only <code>''</code>; anything else logs a warning and is ignored.</li>
+<li class="code">HTML -> <code>innerHTML</code> (through <a href="#sanitizer">sanitizer</a>).</li>
+<li class="code">Text -> <code>textContent</code>.</li>
+</ul>

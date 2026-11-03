@@ -1,0 +1,9 @@
+<h3>register(name, actionFn)</h3>
+<span class="sig">register(name: string, actionFn: Function) → AviFlow
+register(actions: Object) → AviFlow</span>
+<p>Chainable, adds one action, or every function of an object.<br>
+Invalid arguments log a warning.<br>
+Register actions <em>before</em> <code>init()</code> reaches elements that use them.</p>
+<pre><code>const flow = new AviFlow();
+flow.register('save', async function (flow) { /* this = element */ })
+    .register({ a() {}, b() {} });</code></pre>
