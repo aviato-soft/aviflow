@@ -1,0 +1,61 @@
+<!-- Case 5: Multiple flows per element -->
+<h2>Example: Multiple flows per element</h2>
+<h3 class="code">[Event -> Action -> Target][Event -> Action -> Target][...]</h3>
+
+<div class="example">
+  <h4>Button A: the same <code>Event</code> and <code>Action</code>, different <code>Target</code></h4>
+  <span class="sig">data-flow="[click -> getTriggerName -> #output-5-1][click -> getTriggerName -> #output-5-2]"</span>
+  <p class="info">Click on <code>Button A</code> will fill output 1 with:<code>"Trigger name: Button A"</code> and
+    output 2 with:<code>"Trigger name: Button A"</code></p>
+  <hr class="separator">
+
+  <h4>Button B: the same <code>Event</code> and <code>Target</code>, different <code>Action</code></h4>
+  <span class="sig">data-flow="[click -> getTriggerName -> #output-5-1][click -> getTriggerId -> #output-5-1]"</span>
+  <p class="info">Click on <code>Button B</code> will fill output 1 with:<code>"Trigger name: Button B"</code> and then
+    output 1 will be overwritten with:<code>"Trigger id: button-b"</code></p>
+  <hr class="separator">
+
+  <h4>Button C: the same <code>Action</code> and <code>Target</code>, different <code>Event</code></h4>
+  <span class="sig">data-flow="[click -> trigggetTriggerName -> #output-5-1][dblclick -> getTriggerName -> #output-5-1]"</span>
+  <p class="info">Click on <code>Button C</code> will fill output 1 with:<code>"Trigger name: Button C"</code> or double click on fill output 1 with:<code>"Trigger name: Button C"</code></p>
+  <hr class="separator">
+
+  <h4>Button D: 2 flows total different <code>Event</code>, <code>Action</code>, <code>Target</code></h4>
+  <span class="sig">data-flow="[click -> trigggetTriggerName -> #output-5-1][dblclick -> getTriggerId -> #output-5-2]"</span>
+  <p class="info">Click on <code>Button D</code> will fill output 1 with:<code>"Trigger name: Button D"</code> and double click on fill output 2 with:<code>"Trigger id: button-d"</code></p>
+
+
+  <pre><code>&lt;button name="Button A" id="button-a" data-flow="[click -> getTriggerName -> #output-5-1][click -> getTriggerName -> #output-5-2]"&gt;Button A&lt;/button&gt;
+&lt;button name="Button B" id="button-b" data-flow="[click -> getTriggerName -> #output-5-1][click -> getTriggerId -> #output-5-1]"&gt;Button B&lt;/button&gt;
+&lt;button name="Button C" id="button-c" data-flow="[click -> getTriggerName -> #output-5-1][dblclick -> getTriggerName -> #output-5-1]"&gt;Button C&lt;/button&gt;
+&lt;button name="Button D" id="button-d" data-flow="[click -> getTriggerName -> #output-5-1][dblclick -> getTriggerId -> #output-5-2]"&gt;Button D&lt;/button&gt;
+
+&lt;script&gt;
+  const flow = new AviFlow({
+    triggerId: (element) => {
+      const elId = element.getAttribute('id');
+      return `click trigger with id: ${elId}`;
+    },
+    triggerName: (element) => {
+      const elName = element.getAttribute('name');
+      return `click trigger with name: ${elName}`;
+    }
+  });
+&lt;/script&gt;</code></pre>
+
+
+  <div class="form">
+    <button name="Buton A" id="button-a" data-flow="[getTrigger.name -> #output-5-1][getTrigger.name -> #output-5-2]">Button A</button>
+    <button name="Buton B" id="button-b" data-flow="[getTrigger.name -> #output-5-1][getTrigger.id -> #output-5-1]">Button B</button>
+    <button name="Buton C" id="button-c" data-flow="[getTrigger.name -> #output-5-1][dblclick -> getTrigger.name -> #output-5-1]">Button C</button>
+    <button name="Buton D" id="button-d" data-flow="[getTrigger.name -> #output-5-1][dblclick -> getTrigger.id -> #output-5-2]">Button D</button>
+  </div>
+
+  <div class="output example-5">
+    <span>Output 1:</span>
+    <div id="output-5-1"><em>Output will appear here...</em></div>
+    <span>Output 2:</span>
+    <div id="output-5-2"><em>...and here...</em></div>
+  </div>
+
+</div>

@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Declarative data flow for the DOM.</strong><br>
-  Describe <em>event → action → target</em> in a single HTML attribute.
+  Describe <b>event -> action -> target</b> in a single HTML attribute.
 </p>
 
 <p align="center">
@@ -25,7 +25,7 @@
 
 ## Overview
 
-**AviFlow** is a lightweight zero-dependency JavaScript utility that wires up behavior directly in your markup. 
+**AviFlow** is a lightweight zero-dependency JavaScript utility that wires up behavior directly in your markup.  
 Add a **`data-flow`** attribute to any element, and **AviFlow** binds the event, runs the named action, and delivers the result to the target you specify, with no glue code required.
 
 ```html
@@ -37,15 +37,15 @@ Add a **`data-flow`** attribute to any element, and **AviFlow** binds the event,
 
 - **Declarative**: behavior lives in HTML, next to the element it affects.
 - **Simple grammar**: one `->` delimiter, at most three parts.
-- **Event modifiers**: `.prevent` and `.stop` built in.
-- **Sync or async actions**: any function can be an action, including `async` ones.
-- **Extensible**: register your own actions with a single call.
+- **Event modifiers**: `.passive`, `.prevent`, `.stop` and `.window` built in.
+- **Sync** or **async actions**: any function can be an action, including `async` ones.
+- **Extensible**: any function is an action. Pass actions to the constructor or assign them to `flow.action`, flat or nested (`admin.users.remove`).
 - **Scoped initialization**: bind a whole document or just a freshly inserted fragment.
 - **Strict validation**: malformed flows are logged as warnings and never registered.
-- **Micro-sized & Dependency-free**: Written in pure, modern vanilla JavaScript.
+- **Micro-sized & Dependency-free**: Written in pure, modern vanilla `JavaScript`.
 
 
-## Architecture & Installation
+## Architecture and Installation
 
 ### 1. Standalone Drop-in (Traditional Script)
 
@@ -143,8 +143,8 @@ A flow string is split on the `->` delimiter.
 
 | Part | Description |
 | --- | --- |
-| **event** | A DOM event name, optionally followed by modifiers (e.g. `submit.prevent`, `click.prevent.stop`). |
-| **action** | The name of a function in the flow's action registry. |
+| **event** | A DOM event name, optionally followed by modifiers (e.g. `submit.prevent`, `click.prevent.stop`, `scroll.passive.window`). |
+| **action** | The name of a function in the flow's `action` object, or a dotted path of any depth into nested objects (e.g. `admin.users.remove`). |
 | **target** | A standard CSS selector for the element(s) that receive the action's result. |
 
 ### Event modifiers
@@ -153,22 +153,24 @@ A flow string is split on the `->` delimiter.
 | --- | --- |
 | `.prevent` | Calls `event.preventDefault()` before the action runs. |
 | `.stop` | Calls `event.stopPropagation()`. |
+| `.passive` | Registers the listener as passive (`{ passive: true }`). If another flow on the same element and event uses `.prevent`, `.passive` is ignored and a warning is logged, since browsers ignore `preventDefault()` in passive listeners. |
+| `.window` | Attaches the listener to `window` instead of the element (e.g. `resize.window`, `keydown.window`). |
 
 > Modifiers are recognized only at the **end** of the event part. `my.event` is treated as a plain event name.
 
 ### Examples
 
 ```html
-<!-- click → fetch → update #list -->
+<!-- click -> fetch -> update #list -->
 <button data-flow="fetch -> #list">Refresh</button>
 
-<!-- click → load -->
+<!-- click -> load -->
 <button data-flow="load">Load</button>
 
-<!-- click → fetch, no target -->
+<!-- click -> fetch, no target -->
 <button data-flow="fetch -|">Ping</button>
 
-<!-- focus → fetch, no target -->
+<!-- focus -> fetch, no target -->
 <input data-flow="focus -> fetch -|">
 
 <!-- Ajax form -->
@@ -176,6 +178,12 @@ A flow string is split on the `->` delimiter.
 
 <!-- Ajax form, nothing to update -->
 <form data-flow="submit.prevent -> save -|">…</form>
+
+<!-- Listen on window, passive -->
+<div data-flow="scroll.passive.window -> track -|"></div>
+
+<!-- Dotted action path into nested objects -->
+<button data-flow="admin.users.remove -> #list">Remove</button>
 ```
 
 ### Invalid flows
@@ -189,34 +197,46 @@ These are logged as warnings and not registered:
 
 ## Custom actions
 
-An action is any function. It is invoked as `action.call(htmlNode, flow)`, where:
+An action is any function. It is invoked as `action.call(owner, element, event, target, flow)`, where:
 
-- `this` / `htmlNode` is the element that initiated the flow
+- `this` / `owner` is the object that contains the function (`flow.action` for top-level actions, the nested object for dotted paths)
+- `element` is the `HTMLElement` that triggered the flow
+- `event` is the DOM event object
+- `target` is the target CSS selector from the flow definition
 - `flow` is the `AviFlow` instance
 
-Actions may be synchronous or asynchronous.
+An action only needs to declare the parameters it uses, up to the last one it needs, e.g. `(element, event) => { … }`. Actions may be synchronous or asynchronous.
 
 ```js
 import AviFlow from './AviFlow.js';
 
 const flow = new AviFlow({
-  // Pass actions at construction time…
-  greet() {
-    return `Hello from <${this.tagName.toLowerCase()}>`;
+  // Pass actions at construction time, flat…
+  greet(element) {
+    return `Hello from <${element.tagName.toLowerCase()}>`;
+  },
+
+  // …or nested, and call them with a dotted path: data-flow="admin.users.remove -> #list"
+  admin: {
+    users: {
+      async remove(element, event, target, flow) {
+        // `this` is the `admin.users` object
+      }
+    }
   }
 });
 
-// …or register them later.
-flow.register('save', async function (flow) {
-  // `this` is the element that triggered the flow
-});
-
-// Register several at once
-flow.register({
-  hide() { /* … */ },
-  show() { /* … */ }
-});
+// …or assign them later.
+flow.action.save = async (element, event, target, flow) => {
+  // …
+};
+flow.action.admin.users.add = (element) => { /* … */ };
 ```
+
+- If an action returns a value (or a promise), the result is delivered to the target. For async actions, only the most recent call per target is applied.
+- After a target is updated, `flow.init(target)` runs so any new `[data-flow]` elements inside it are bound.
+- An exact key in `flow.action` (even one containing dots) takes precedence over dotted-path resolution. Paths through `__proto__`, `prototype`, `constructor` and inherited `Object.prototype` members are rejected.
+- If an action name cannot be resolved, a warning is logged and nothing runs.
 
 The built-in `fetch` action is always available.
 
@@ -226,7 +246,7 @@ The built-in `fetch` action is always available.
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `actions` | `object` | Map of `name → function`, merged with the built-in actions. |
+| `actions` | `object` | Map of `name -> function`, merged with the built-in actions. |
 | `options` | `object` | Engine options (see below). |
 
 **Options**
@@ -240,23 +260,28 @@ The built-in `fetch` action is always available.
 
 Finds every `[data-flow]` element inside `root` (including `root` itself) and binds it. Defaults to `option.root`. Returns the instance, so calls can be chained.
 
+`root` can be a `Document`, an `HTMLElement`, or a CSS selector string. A selector initializes every matching element, and is resolved against the global `document`.
+
+It is safe to call repeatedly, including on content that is already bound. Existing listeners are reused, replaced when their options change, and removed when their event is no longer declared in `data-flow`. Removing or invalidating the attribute and calling `init()` again detaches the element's listeners.
+
 Use it to bind content added to the page after load:
 
 ```js
 const flow = new AviFlow({}, { autoInit: false });
-flow.init();                         // bind the whole document
+flow.init();                                       // bind the whole document
 flow.init(document.querySelector('#new-content')); // bind a fragment
+flow.init('#new-content');                         // same, using a selector
 ```
 
-#### `flow.register(name, fn)`
+#### `flow.resolveAction(path)`
 
-Registers an action. Also accepts an object of functions. Returns the instance. Any other argument shape logs a warning.
+Resolves an action name, including dotted paths, to `{ fn, owner }`, where `owner` is the object that contains the function (used as `this` when the action is called). Returns `null` if the name does not resolve to a function.
 
 ### Properties
 
 | Property | Description |
 | --- | --- |
-| `flow.action` | The action registry (`fetch` plus any custom actions). |
+| `flow.action` | The actions object (`fetch` plus any custom actions). Assign to it at any time; nested objects are supported. |
 | `flow.option` | The resolved options object. |
 | `flow.tools` | Helpers available to actions: `element` (`AviElement`) and `text` (`AviText`). |
 
@@ -267,9 +292,18 @@ More examples and the full documentation are available at
 
 
 
-## Contributing
+## Open Source & Contributions
+
+This is an open-source project! We welcome developers to contribute, submit bug reports, suggest improvements, and build features.
 
 Issues and pull requests are welcome. Please keep changes focused and include an example flow that demonstrates the behavior you are adding or fixing.
+
+1. **Fork the repo** on [GitHub](https://github.com/aviato-soft/aviflow).
+2. **Create a branch** for your feature: git checkout -b feature/new-feature.
+3. **Commit your changes**: git commit -m "Add new feature".
+4. **Push your branch**: git push origin feature/new-feature.
+5. **Open a Pull Request!**
+
 
 
 ## Status

@@ -1,0 +1,19 @@
+<!-- Case 1: Full 3 items (event -> action -> target) -->
+<h2>Example: Form Elements</h2>
+<h3 class="code">Event -> Action -> Target</h3>
+<span class="sig">data-flow="input -> transformText -> #output-20"</span>
+
+<div class="example">
+  <pre><code></code></pre>
+
+  <div class="form">
+    <p>
+      <button data-flow="html.decode -> #output-20">Decode Html</button>
+      <button data-flow="html.encode -> #output-20">Encode Html</button>
+    </p>
+  </div>
+
+  <div class="output">
+    <textarea id="output-20" placeholder="paste html code here to escape it"></textarea>
+  </div>
+</div>

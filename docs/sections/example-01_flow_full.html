@@ -1,0 +1,27 @@
+<!-- Case 1: Full 3 items (event -> action -> target) -->
+<h2>Example: Full Flow</h2>
+<h3 class="code">Event -> Action -> Target</h3>
+<span class="sig">data-flow="input -> transformText -> #output-1"</span>
+
+<div class="example">
+  <pre><code>&lt;input data-flow="input -> transformText -> #output-1" &gt;
+&lt;div id="output-1"&gt;&lt;/div&gt;
+&lt;script&gt;
+  const flow = new AviFlow({
+    transformText: (element) => {
+      const value = element.value.trim();
+      if (!value) return '&lt;em&gt;Output will appear here as you type...&lt;/em&gt;';
+      return `&lt;strong&gt;Uppercase:&lt;/strong&gt; ${value.toUpperCase()} | &lt;strong&gt;Length:&lt;/strong&gt; ${value.length}`;
+    }
+  });
+&lt;/script&gt;</code></pre>
+
+  <div class="form">
+    <label for="input-1">Type text to transform (event: input):</label>
+    <input type="text" id="input-1" data-flow="input -> transformText -> #output-1" placeholder="Type something here...">
+  </div>
+
+  <div class="output" id="output-1">
+    <em>Output will appear here as you type...</em>
+  </div>
+</div>

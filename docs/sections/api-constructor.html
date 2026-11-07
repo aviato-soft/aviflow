@@ -1,17 +1,14 @@
 <h2>API Reference</h2>
-<h3>Instance properties</h3>
-<table>
-<tr><th>Property</th><th>Description</th></tr>
-<tr><td><code>action</code></td><td>Registry <code>{ name: fn }</code>.<br>Pre-filled with <code>fetch</code> (implemented by <code>AviFlowActions.fetchData</code>) plus constructor actions.</td></tr>
-<tr><td><code>option</code></td><td>Resolved options (see constructor).</td></tr>
-<tr><td><code>tools</code></td><td class="code"><code>{ element: AviElement, text: AviText }</code> -> <code>AviFlow.tools.element</code>, <code>AviFlow.tools.text</code> - helpers exposed to actions.</td></tr>
-</table>
-
-<h3>new AviFlow(actions, options)</h3>
+<h3>new AviFlow(actions?, options?)</h3>
 <span class="sig">new AviFlow(actions = {}, options = {}) -> AviFlow</span>
 <table>
-<tr><th>Param</th><th>Type</th><th>Description</th></tr>
-<tr><td><code>actions</code></td><td>Object</td><td>Custom actions merged over the defaults (may override <code>fetch</code>).</td></tr>
-<tr><td><code>options.autoInit</code></td><td>boolean</td><td>Default <code>true</code>: call <code>init()</code> immediately.</td></tr>
-<tr><td><code>options.root</code></td><td>Document | HTMLElement | null</td><td>Default <code>document</code> (or <code>null</code> without a DOM).</td></tr>
+<tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+<tr><td><code>actions</code></td><td><code>Object</code></td><td>Map of <code>name -> function</code>, merged with the built-in actions.</td></tr>
+<tr><td><code>options</code></td><td><code>Object</code></td><td>Engine options (see below).</td></tr>
+</table>
+<p>Options</p>
+<table>
+<tr><th>Option</th><th>Default</th><th>Description</th></tr>
+<tr><td><code>autoInit</code></td><td>true</td><td>Call <code>init()</code> immediately after construction.</td></tr>
+<tr><td><code>root</code></td><td><code>document</code></td><td>Default container scanned for <code>[data-flow]</code> elements.</td></tr>
 </table>

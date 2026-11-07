@@ -2,12 +2,12 @@
 <ul>
   <li><strong>Declarative</strong>: behavior lives in HTML, next to the element it affects.</li>
   <li><strong>Simple grammar</strong>: one <code>-&gt;</code> delimiter, at most three parts.</li>
-  <li><strong>Event modifiers</strong>: <code>.prevent</code> and <code>.stop</code> built in.</li>
-  <li><strong>Sync</strong> or <strong>async</strong> actions: any function can be an action, including
+  <li><strong>Event modifiers</strong>: <code>.passive</code>, <code>.prevent</code>, <code>.stop</code> and <code>.window</code> built in.</li>
+  <li><strong>Sync</strong> or <strong>async actions</strong>: any function can be an action, including
     <code>async</code> ones.</li>
-  <li><strong>Extensible</strong>: register your own actions with a single call.</li>
+  <li><strong>Extensible</strong>: any function is an action. Pass actions to the constructor or assign them to <code>flow.action</code>, flat or nested (<code>admin.users.remove</code>).</li>
   <li><strong>Scoped initialization</strong>: bind a whole document or just a freshly inserted fragment.</li>
   <li><strong>Strict validation</strong>: malformed flows are logged as warnings and never registered.</li>
-  <li><strong>Micro-sized & Dependency-free</strong>: Written in pure, modern vanilla <code>JavaScript</code>.
+  <li><strong>Micro-sized &amp; Dependency-free</strong>: Written in pure, modern vanilla <code>JavaScript</code>.
   </li>
 </ul>

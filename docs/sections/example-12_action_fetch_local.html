@@ -1,0 +1,92 @@
+<!-- Case 12: Local fetch action -->
+<h2>Example: Local fetch action</h2>
+<h3 class="code">[Event] -> fetch -> [Target]</h3>
+<span class="sig">data-flow="fetch -> #output-12"</span>
+
+<div class="example">
+  <p class"info"><code>data-flow="fetch -> #output-12"</code> is an abreviation for <code>data-flow="click -> fetch -> #output-12"</code></p>
+
+  <table>
+    <tr>
+      <td>data-method</td>
+      <td>GET</td>
+    </tr>
+    <tr>
+      <td>data-url</td>
+      <td>for testing purpose we use<br>
+        <code>data-url="data:application/json;charset=utf-8,OBJECT"</code>,<br>
+        the OBJECT use to retrieve data is described in the table below</td>
+    </tr>
+  </table>
+
+  <table>
+    <tr>
+      <th>Trigger</th><th>data-url object</th><th>Target (#output-12) inner html</th>
+    </tr>
+    <tr>
+      <td>Button A</td>
+      <td><code>"This is a string returned as result."</code></td>
+      <td><code>This is a string returned as result.</code></td>
+    </tr>
+    <tr>
+      <td>Button B</td>
+      <td><code>"&lt;p&gt;This is a &lt;b&gt;html&lt;/b&gt; formated &lt;em&gt;string&lt;/em&gt; returned as result."</p></code></td>
+      <td><code>&lt;p&gt;This is a &lt;b&gt;html&lt;/b&gt; formated &lt;em&gt;string&lt;/em&gt; returned as result.</code></td>
+    </tr>
+    <tr>
+      <td>Button C</td>
+      <td><code>{"success":true,"message":"&lt;p&gt;This JSON does not have html property.&lt;/p&gt;"}</code></td>
+      <td><code>{"success":true,"message":"&lt;p&gt;This JSON does not have html property.&lt;/p&gt;"}</p></code></td>
+    </tr>
+    <tr>
+      <td>Button D</td>
+      <td><code>{"success":true,"html":"&lt;p&gt;This is html property of returned JSON.&lt;/p&gt;"}</code></td>
+      <td><code>&lt;p&gt;This is html property of returned JSON.&lt;/p&gt;</code></td>
+    </tr>
+  </table>
+
+  <pre><code>&lt;button data-flow="fetch -&gt; #output-12" data-method="get" 
+  data-url='data:application/json;charset=utf-8,"This is a string returned as result."'&gt;Button A&lt;/button&gt;
+&lt;button data-flow="fetch -&gt; #output-12" data-method="get" 
+  data-url='data:application/json;charset=utf-8,"&lt;p&gt;This is a &lt;b&gt;html&lt;/b&gt; formated &lt;em&gt;string&lt;/em&gt; returned as result.&lt;/p&gt;"'&gt;Button B&lt;/button&gt;
+&lt;button data-flow="fetch -&gt; #output-12" data-method="get" 
+  data-url='data:application/json;charset=utf-8,{"success":true,"message":"&lt;p&gt;This JSON does not have html property.&lt;/p&gt;"}'&gt;Button C&lt;/button&gt;
+&lt;button data-flow="fetch -&gt; #output-12" data-method="get" 
+  data-url='data:application/json;charset=utf-8,{"success":true,"html":"&lt;p&gt;This is html property of returned JSON.&lt;/p&gt;"}'&gt;Button D&lt;/button&gt;
+&lt;div id="output-11"&lt;&gt;/div&lt;
+&lt;script&gt;
+  const flow = new AviFlow();
+&lt;/script&gt;
+  
+  </code></pre>
+
+
+  <div class="form">
+    <button 
+      data-flow="fetch -> #output-12" 
+      data-method="get"
+      data-url='data:application/json;charset=utf-8,"This is a string returned as result."'
+      >Button A</button>
+    
+    <button 
+      data-flow="fetch -> #output-12" 
+      data-method="get"
+      data-url='data:application/json;charset=utf-8,"<p>This is a <b>html</b> formated <em>string</em> returned as result.</p>"'
+      >Button B</button>
+
+    <button 
+      data-flow="fetch -> #output-12" 
+      data-method="get"
+      data-url='data:application/json;charset=utf-8,{"success":true,"message":"<p>This JSON does not have html property.</p>"}'
+      >Button C</button>
+
+    <button 
+      data-flow="fetch -> #output-12" 
+      data-method="get"
+      data-url='data:application/json;charset=utf-8,{"success":true,"html":"<p>This is html property of returned JSON.</p>"}'
+      >Button D</button>
+  </div>
+
+  <div id="output-12" class="output"><em>Output will appear here...</em></div>
+
+</div>

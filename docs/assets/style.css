@@ -50,7 +50,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--fg);
-  font: 15px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif
+  font: 1rem/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif
 }
 
 .wrap {
@@ -173,18 +173,18 @@ p {
 
 code {
   background: var(--code);
-  padding: 1px 5px;
-  border-radius: 4px;
+  border-radius: .25rem;
+  color: var(--code-acc);
   font-family: 'Fira Code' !important;
   font-feature-settings: "liga" 1, "calt" 1;
-  font-size: 13px;
+  font-size: .8125rem;
   font-variant-ligatures: normal;
+  padding:.15rem .5rem;
 }
 
 .code {
   font-family: 'Fira Code' !important;
   font-feature-settings: "liga" 1, "calt" 1;
-  font-size: 13px;
   font-variant-ligatures: normal;
 }
 
@@ -475,10 +475,69 @@ footer svg {
 }
 
 hr {
-  border-color: var(--mut)
+  border-color: var(--bd)
 }
 
 .separator {
   height: 1rem;
   margin: .5rem 0;
 }
+
+
+.example {
+  background-color: var(--bg);
+  border: 1px solid var(--mut);
+  border-radius: 1rem;
+  padding: 0 1rem;
+}
+
+.example .form{
+  margin: 1rem 0;
+  padding: 1rem 0;
+}
+
+.example .form button{
+  background-color: transparent;
+  border: 1px solid var(--mut);
+  border-radius: .25rem;
+  padding: .5rem 1rem;
+}
+
+.example .form button:hover{
+  background-color: var(--acc);
+  cursor: pointer;
+}
+
+.example .form input{
+  background-color: transparent;
+  border: 0 none;
+  border-bottom: 1px solid var(--mut);
+  font-family: 'Fira Code';
+  font-size: large;
+  outline-color: transparent;
+}
+
+.example .form input:focus-visible{
+  outline-color: transparent;
+  border-bottom: 1px solid var(--fg);
+}
+
+.example .output{
+  border: 3px dashed var(--mut);
+  border-radius: .25rem;
+  margin-bottom: 1rem;
+  padding: 2rem 1rem;
+}
+
+.example-5{
+  display: flex;
+}
+
+.example-5>div{
+  border: 1px solid var(--bd);
+  flex: auto;
+  margin: 0 1rem;
+  padding: 1rem;
+}
+
+

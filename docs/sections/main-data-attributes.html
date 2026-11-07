@@ -1,0 +1,129 @@
+<h2>Data flow grammar</h2>
+<p>A flow string is split on the <code>-&gt;</code> delimiter.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Form</th>
+      <th>Syntax</th>
+      <th>Behavior</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Full flow</td>
+      <td><code>event -&gt; action -&gt; target</code></td>
+      <td>Runs the action on the event and sends the result to the target.</td>
+    </tr>
+    <tr>
+      <td>Implicit event</td>
+      <td><code>action -&gt; target</code></td>
+      <td>Same as above, with the event defaulting to <code>click</code>.</td>
+    </tr>
+    <tr>
+      <td>Eventless</td>
+      <td><code>action</code></td>
+      <td>Runs the action on <code>click</code>, with no target update.</td>
+    </tr>
+    <tr>
+      <td>Terminated (with event)</td>
+      <td><code>event -&gt; action -|</code></td>
+      <td>Runs the action on the event and stops: no target update.</td>
+    </tr>
+    <tr>
+      <td>Terminated</td>
+      <td><code>action -|</code></td>
+      <td>Runs the action on <code>click</code> and stops: no target update.</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<h3>Components</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Part</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>event</strong></td>
+      <td>A DOM event name, optionally followed by modifiers (e.g. <code>submit.prevent</code>, <code>click.prevent.stop</code>, <code>scroll.passive.window</code>).</td>
+    </tr>
+    <tr>
+      <td><strong>action</strong></td>
+      <td>The name of a function in the flow's <code>action</code> object, or a dotted path of any depth into nested objects (e.g. <code>admin.users.remove</code>).</td>
+    </tr>
+    <tr>
+      <td><strong>target</strong></td>
+      <td>A standard CSS selector for the element(s) that receive the action's result.</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<h3>Event modifiers</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Modifier</th>
+      <th>Effect</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>.prevent</code></td>
+      <td>Calls <code>event.preventDefault()</code> before the action runs.</td>
+    </tr>
+    <tr>
+      <td><code>.stop</code></td>
+      <td>Calls <code>event.stopPropagation()</code>.</td>
+    </tr>
+    <tr>
+      <td><code>.passive</code></td>
+      <td>Registers the listener as passive (<code>{ passive: true }</code>). If another flow on the same element and event uses <code>.prevent</code>, <code>.passive</code> is ignored and a warning is logged, since browsers ignore <code>preventDefault()</code> in passive listeners.</td>
+    </tr>
+    <tr>
+      <td><code>.window</code></td>
+      <td>Attaches the listener to <code>window</code> instead of the element (e.g. <code>resize.window</code>, <code>keydown.window</code>).</td>
+    </tr>
+  </tbody>
+</table>
+<p><strong>Note:</strong> modifiers are recognized only at the <strong>end</strong> of the event part. <code>my.event</code> is treated as a plain event name.</p>
+
+
+<h3>Examples</h3>
+<pre><code>&lt;!-- click -> fetch -> update #list --&gt;
+&lt;button data-flow=&quot;fetch -&gt; #list&quot;&gt;Refresh&lt;/button&gt;
+
+&lt;!-- click -> load --&gt;
+&lt;button data-flow=&quot;load&quot;&gt;Load&lt;/button&gt;
+
+&lt;!-- click -> fetch, no target --&gt;
+&lt;button data-flow=&quot;fetch -|&quot;&gt;Ping&lt;/button&gt;
+
+&lt;!-- focus -> fetch, no target --&gt;
+&lt;input data-flow=&quot;focus -&gt; fetch -|&quot;&gt;
+
+&lt;!-- Ajax form --&gt;
+&lt;form data-flow=&quot;submit.prevent -&gt; fetch -&gt; #result&quot;&gt;…&lt;/form&gt;
+
+&lt;!-- Ajax form, nothing to update --&gt;
+&lt;form data-flow=&quot;submit.prevent -&gt; save -|&quot;&gt;…&lt;/form&gt;
+
+&lt;!-- Listen on window, passive --&gt;
+&lt;div data-flow=&quot;scroll.passive.window -&gt; track -|&quot;&gt;&lt;/div&gt;
+
+&lt;!-- Dotted action path into nested objects --&gt;
+&lt;button data-flow=&quot;admin.users.remove -&gt; #list&quot;&gt;Remove&lt;/button&gt;</code></pre>
+
+
+<h3>Invalid flows</h3>
+<p>These are logged as warnings and not registered:</p>
+<ul>
+  <li>an empty action</li>
+  <li>an empty target, such as <code>fetch -&gt;</code></li>
+  <li>more than three parts</li>
+  <li><code>-|</code> after three parts</li>
+</ul>

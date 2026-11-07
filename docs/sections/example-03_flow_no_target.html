@@ -1,0 +1,21 @@
+<!-- Case 3: 2 items (event -> action -|) | No target -->
+<h2>Example: No target</h2>
+<h3 class="code">Event -> Action -|</h3>
+<span class="sig">data-flow="click -> alertTimestamp -|"</span>
+
+<div class="example">
+  <pre><code>&lt;input data-flow="click -> alertTimestamp -|" &gt;
+&lt;script&gt;
+  const flow = new AviFlow({
+    alertTimestamp: () => {
+      const now = new Date();
+      alert (`Current Time: ${now.toLocaleTimeString()} (${now.toLocaleDateString()})`);
+    }
+  });
+&lt;/script&gt;</code></pre>
+
+
+  <div class="form">
+    <button data-flow="click -> alertTimestamp -|">Alert Timestamp</button>
+  </div>
+</div>

@@ -1,0 +1,8 @@
+<h2>AviFlow.tools.text</h2>
+<p>String helpers (class <code>AviText</code>, exposed as <code>AviFlow.tools.text</code>). Non-string input to <code>toCamelCase</code> returns <code>''</code>.</p>
+
+<h3>AviFlow.tools.text.toCamelCase(text, firstLetterLower)</h3>
+<span class="sig">AviFlow.tools.text.toCamelCase(text, firstLetterLower = true) -> string</span>
+<p>Trims, removes leading <code>-</code>, <code>_</code>, whitespace, and uppercases the letter following each separator run. <code>firstLetterLower = false</code> gives PascalCase.</p>
+<pre><code>AviFlow.tools.text.toCamelCase('pending-class')   // "pendingClass"
+AviFlow.tools.text.toCamelCase('my_var name')     // "myVarName"</code></pre>

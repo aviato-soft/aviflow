@@ -1,4 +1,4 @@
-import { expect, jest, test } from '@jest/globals';
+import { afterEach, beforeEach, describe, expect, jest, test } from '@jest/globals';
 import AviFlowCoreEngine from '../src/AviFlowCoreEngine.js';
 
 describe('AviFlowCoreEngine / parseFlow', () => {
@@ -70,6 +70,13 @@ describe('AviFlowCoreEngine / parseFlow', () => {
   });
 
 
+  test('should return null for a non-string flow', () => {
+    expect(flowCoreEngine.parseFlow(123)).toBeNull();
+    expect(flowCoreEngine.parseFlow({})).toBeNull();
+    expect(flowCoreEngine.parseFlow(['click -> action -> #target'])).toBeNull();
+  });
+
+
   // Test trim parameters
   test('should trim surrounding whitespaces around syntax delimiters', () => {
     result = flowCoreEngine.parseFlow(' submit  ->   submitForm   ->   .result-box ');
@@ -137,17 +144,17 @@ describe('AviFlowCoreEngine / parseFlow', () => {
   });
 
 
-  test('should return a warnging: too many parts error: -> -> -> -> ... -> ', () => {
+  test('should return a warning: too many parts error: -> -> -> -> ... -> ', () => {
     result = flowCoreEngine.parseFlow('click -> keyup -> formatText -> another target');
     expect(result).toBeNull();
     expect(warnSpy).toHaveBeenCalledTimes(1);
-    expect(warnSpy).toHaveBeenCalledWith('[AviFlow.core.parseFlow] Too many "->" parts (max: event -> action -> target)');
+    expect(warnSpy).toHaveBeenCalledWith('[AviFlow.core.parseSingleFlow] Too many "->" parts (max: event -> action -> target)');
 
     result = flowCoreEngine.parseFlow('click -> keyup -> formatText -> another target -|');
     expect(result).toBeNull();
     expect(warnSpy).toHaveBeenCalledTimes(2);
     expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('[AviFlow.core.parseFlow] Too many parts before "-|" (max: event -> action -|)')
+      expect.stringContaining('[AviFlow.core.parseSingleFlow] Too many parts before "-|" (max: event -> action -|)')
     );
   });
 
@@ -157,7 +164,7 @@ describe('AviFlowCoreEngine / parseFlow', () => {
     expect(result).toBeNull();
     expect(warnSpy).toHaveBeenCalledTimes(1);
     expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('[AviFlow.core.parseFlow] Missing "action"')
+      expect.stringContaining('[AviFlow.core.parseSingleFlow] Missing "action"')
     );
   });
 
@@ -167,11 +174,11 @@ describe('AviFlowCoreEngine / parseFlow', () => {
     expect(result).toBeNull();
     expect(warnSpy).toHaveBeenCalledTimes(1);
     expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining(`[AviFlow.core.parseFlow] Empty target: end the flow with "-|" when there is no target`)
+      expect.stringContaining(`[AviFlow.core.parseSingleFlow] Empty target: end the flow with "-|" when there is no target`)
     );
   })
 
-  test('sould return click for a (.)dot event', () => {
+  test('should return click for a (.)dot event', () => {
     result = flowCoreEngine.parseFlow('.stop -> action -> #target');
       expect(result).toStrictEqual([{
         action: 'action',
@@ -185,5 +192,111 @@ describe('AviFlowCoreEngine / parseFlow', () => {
   }) 
 
 
+  // Multiple flows: [flow1][flow2]
+  test('should parse several flows wrapped in square brackets', () => {
+    result = flowCoreEngine.parseFlow('[click -> save -> #status][keyup.stop -> validate -|]');
+    expect(result).toStrictEqual([
+      {
+        action: 'save',
+        event: 'click',
+        onWindow: false,
+        passive: false,
+        prevent: false,
+        stop: false,
+        target: '#status',
+      },
+      {
+        action: 'validate',
+        event: 'keyup',
+        onWindow: false,
+        passive: false,
+        prevent: false,
+        stop: true,
+        target: null,
+      },
+    ]);
+  });
+
+
+  test('should skip the invalid flows and keep the valid ones', () => {
+    result = flowCoreEngine.parseFlow('[keyup -> -> #t1][click -> go -> #t2]');
+    expect(result).toStrictEqual([{
+      action: 'go',
+      event: 'click',
+      onWindow: false,
+      passive: false,
+      prevent: false,
+      stop: false,
+      target: '#t2',
+    }]);
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('[AviFlow.core.parseSingleFlow] Missing "action"')
+    );
+  });
+
+
+  test('should return null when every flow in the string is invalid', () => {
+    result = flowCoreEngine.parseFlow('[keyup -> -> #t1][keyup -> act -> ]');
+    expect(result).toBeNull();
+    expect(warnSpy).toHaveBeenCalledTimes(2);
+  });
+
+
+  test('should return null when the multi-flow string cannot be split', () => {
+    result = flowCoreEngine.parseFlow('[click -> a -> #t');
+    expect(result).toBeNull();
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy).toHaveBeenCalledWith(
+      '[AviFlow.core.splitFlows] Unbalanced brackets or quotes in multi-flow definition'
+    );
+  });
+
+
+  // Frozen results
+  test('should return frozen results', () => {
+    result = flowCoreEngine.parseFlow('click -> freezeMe -> #target');
+
+    expect(Object.isFrozen(result)).toBe(true);
+    expect(Object.isFrozen(result[0])).toBe(true);
+    expect(() => { result[0].action = 'changed'; }).toThrow(TypeError);
+  });
+
+
+  // Cache
+  test('should return the cached result for the same string', () => {
+    const first = flowCoreEngine.parseFlow('click -> cachedAction -> #cached');
+    const second = flowCoreEngine.parseFlow('click -> cachedAction -> #cached');
+
+    expect(second).toBe(first); // same reference, not just equal
+  });
+
+
+  test('should cache invalid results too (warn only once)', () => {
+    const first = flowCoreEngine.parseFlow('cachedInvalid -> -> #target');
+    const second = flowCoreEngine.parseFlow('cachedInvalid -> -> #target');
+
+    expect(first).toBeNull();
+    expect(second).toBeNull();
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+  });
+
+
+  test('should evict the oldest cache entries once the cache limit (500) is reached', () => {
+    const oldestFlow = 'click -> evictedAction -> #evicted';
+    const oldest = flowCoreEngine.parseFlow(oldestFlow);
+    expect(flowCoreEngine.parseFlow(oldestFlow)).toBe(oldest); // still cached
+
+    // far more unique entries than the limit: the oldest one must be dropped
+    let last;
+    for (let i = 0; i < 1000; i++) {
+      last = flowCoreEngine.parseFlow(`fill${i} -> #fill`);
+    }
+
+    const reparsed = flowCoreEngine.parseFlow(oldestFlow);
+    expect(reparsed).not.toBe(oldest); // parsed again => new object
+    expect(reparsed).toEqual(oldest); // ...with the same content
+    expect(flowCoreEngine.parseFlow('fill999 -> #fill')).toBe(last); // newest still cached
+  });
 
 });

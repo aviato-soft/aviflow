@@ -1,6 +1,6 @@
 <h2>AviFlow.action</h2>
-<h3 id="fetchData">AviFlow.action.fetch(element, opt)</h3>
-<span class="sig">AviFlow.action.fetch(element: HTMLElement, opt = {}) → Promise&lt;Object|string&gt; | null</span>
+<h3 id="fetchData">AviFlow.action.fetch(element, event?, targetSelector?, flow?)</h3>
+<span class="sig">AviFlow.action.fetch(element: HTMLElement, event?: HTMLEvent | null, targetSelector: string, flow: AviFlow instance) → Promise&lt;Object|string&gt; | null</span>
 <p>Registered by default as <code>AviFlow.action.fetch</code>. Reads configuration from the element and performs an HTTP request. Returns <code>null</code> if <code>element</code> is falsy.</p>
 <h4>Element configuration</h4>
 <table>

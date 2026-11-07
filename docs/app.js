@@ -21,31 +21,15 @@ app.data = {
     {
       label: 'Quick Start',
       page: 'main-quick-start'
-    },/*
+    },
     {
       label: 'Data flow grammar',
-      page: 'main-api'
-    },/*
-    {
-      label: 'Components',
-      page: 'main-api'
-    },
-    {
-      label: 'Event modifiers',
-      page: 'main-api'
-    },
-    {
-      label: 'Invalid flows',
-      page: 'main-api'
+      page: 'main-data-attributes'
     },
     {
       label: 'Custom actions',
-      page: 'main-api'
+      page: 'main-custom-actions'
     },
-    {
-      label: 'Properties',
-      page: 'main-api'
-    },*/
     {
       label: 'API Reference',
     },
@@ -62,8 +46,8 @@ app.data = {
       page: 'api-init'
     },
     {
-      label: 'register',
-      page: 'api-register'
+      label: 'resolveAction',
+      page: 'api-resolve-action'
     },
     {
       label: 'AviFlow.action',
@@ -116,63 +100,97 @@ app.data = {
     {
       label: 'AviFlow.tools.text',
       page: 'group'
-    },/*
-    {
-      label: 'toCamelCase',
-      page: 'api-tools-text-constructor'
     },
     {
-      label: 'toPascalCase',
-      page: 'api-tools-text-constructor'
+      label: 'toCamelCase',
+      page: 'api-tools-text-toCamelCase'
     },
     {
       label: 'toCapitalize',
-      page: 'api-tools-text-constructor'
-    },*/
+      page: 'api-tools-text-toCapitalize'
+    },
+    {
+      label: 'toPascalCase',
+      page: 'api-tools-text-toPascalCase'
+    },
     {
       label: 'Examples',
+    },
+    {
+      label: 'Full Flow',
+      page: 'example-01_flow_full'
+    },
+    {
+      label: 'Implicit event',
+      page: 'example-02_flow_default_event_click'
+    },
+    {
+      label: 'Terminated (with Event)',
+      page: 'example-03_flow_no_target'
+    },
+    {
+      label: 'Eventless',
+      page: 'example-04_flow_action_only'
+    },
+    {
+      label: 'Multiple events on one flow',
+      page: 'example-05_flow_array'
+    },
+    // [...] //
+     {
+      label: 'Minimalist fetch (using POST)',
+      page: 'example-10_action_fetch_minimal'
+    },
+    {
+      label: 'Basic fetch action',
+      page: 'example-11_action_fetch_basic'
+    },
+    {
+      label: 'Local fetch action',
+      page: 'example-12_action_fetch_local'
+    },
+    {
+      label: 'Handling Fetch Error',
+      page: 'example-13_action_fetch_error'
     },/*
     {
-      id: 21,
-      label: 'Full 3 items (event -> action -> target)',
-      page: 'example-01_full_3_items'
+      label: 'Handling Fetch Success',
+      page: 'example-14_action_fetch_success'
+    },/*
+    {
+      label: 'Fetch using a[href]',
+      page: 'example-15_action_fetch_anchor'
     },
     {
-      id: 22,
-      label: '2 items, default event: click',
-      page: 'example-02_only_2_items'
+      label: 'Fetch using params',
+      page: 'example-16_action_fetch_params'
     },
     {
-      id: 23,
-      label: '2 items, no target use -|',
-      page: 'example-03_2_items_no_target'
+      label: 'Fetch using form elements',
+      page: 'example-17_action_fetch_form'
+    },*/
+
+    // [...] //
+
+    {
+      label: 'Form elements',
+      page: 'example-20_form_elements'
     },
     {
-      id: 24,
-      label: '1 item only - action',
-      page: 'example-04_only_1_item'
-    },
-    {
-      label: 'Contributing',
+      label: 'Contributing'
     },
     {
       label: 'Status',
     },
     {
       label: 'License',
-    },
-*/
+    }
   ]
 }
 app.actions = {
-  getSection: async (triggerEl, flow) => {
+  getSection: async (triggerEl, event, targetSelector, flow) => {
     try {
-      const params = {
-        url: 'sections/' + (triggerEl.getAttribute('href') ?? triggerEl.dataset.section) + '.html',
-        method: 'get',
-        //responseType: 'text' 
-      };
-      const response = await flow.action.fetch(triggerEl, params);
+      const response = await flow.action.fetch(triggerEl, event, targetSelector, flow);
       return response;
     } catch (error) {
       console.error("Error fetching file:", error);
@@ -241,7 +259,7 @@ app.actions = {
     }
   },
 
-  highlightKey: (triggerEl, flow, event) => {
+  highlightKey: (triggerEl, event) => {
     if (event.key === 'Enter' || event.key === 'F3') {
       event.preventDefault();
       app.fn.search.go(app.fn.search.cur + (event.shiftKey ? -1 : 1))
@@ -275,12 +293,12 @@ app.actions = {
     let r = triggerEl.getBoundingClientRect();
     let nr = app.el.nav.getBoundingClientRect();
     if (r.top < nr.top + 8 || r.bottom > nr.bottom - 8) {
-      nav.scrollTop += r.top - nr.top - nr.height / 2 + r.height / 2;
+      app.el.nav.scrollTop += r.top - nr.top - nr.height / 2 + r.height / 2;
     }
   },
 
 
-  themeChange: (triggerEl) => {
+  themeChange: () => {
     let choice = (app.el.html.dataset.theme === 'dark') ? 'light' : 'dark';
     app.fn.applyTheme(choice);
   },
@@ -288,17 +306,71 @@ app.actions = {
 
 app.examples = {
   // Action for Example 1
-  transformText: (element, event) => {
+  transformText: (element) => {
     const value = element.value.trim();
     if (!value) return '<em>Output will appear here as you type...</em>';
     return `<strong>Uppercase:</strong> ${value.toUpperCase()} | <strong>Length:</strong> ${value.length}`;
   },
 
   // Action for Example 2
-  generateTimestamp: (element, event) => {
+  generateTimestamp: () => {
     const now = new Date();
     return `<strong>Current Time:</strong> ${now.toLocaleTimeString()} (${now.toLocaleDateString()})`;
-  }
+  },
+
+  // Action for Example 3, 4
+  alertTimestamp: () => {
+    const now = new Date();
+    alert (`Current Time: ${now.toLocaleTimeString()} (${now.toLocaleDateString()})`);
+  },
+
+  // Actions for Example 5
+  getTrigger: {
+    id: (element, event) => {
+      console.log(event);
+      const elId = element.getAttribute('id');
+      return `${event.type} on trigger with id: ${elId}`;
+    },
+    name: (element, event) => {
+      console.log(event);
+      const elName = element.getAttribute('name');
+      return `${event.type} on trigger with name: ${elName}`;
+    }
+  },
+  
+  html: {
+    decode: (element, event, targetSelector) => {
+      const textarea = document.createElement('textarea');
+      textarea.innerHTML = document.querySelector(targetSelector).value;
+      return textarea.value;
+    },
+
+    encode: (element, event, targetSelector) => {
+      const textarea = document.createElement('textarea');
+      textarea.innerText = document.querySelector(targetSelector).value;
+      return textarea.innerHTML;
+    }
+  },
+
+  fetchCustomHandler: {
+    on: {
+      error: (a,b,c,d) => {
+        console.log({test: 'custom error', a,b,c,d});
+      },
+      fail: (a,b,c,d) => {
+        console.log({test: 'custom fail', a,b,c,d});
+      },
+      success: (data, element, event, targetSelector, flow) => {
+        const target = document.getElementById('output-12');
+        flow.tools.element.setContent(target, 'Success: ' + data.html);
+        console.log({ test: 'custom success', 
+          data, element, event, targetSelector, flow
+        });
+      }
+    }
+  },
+
+  
 }
 
 app.el = {
@@ -337,20 +409,20 @@ app.fn = {
     //cleanup: 
     // app.flow.tools.element.setContent(app.el.nav, '');
     // app.flow.tools.element.setContent(app.el.main, '...');
-    const params = {
-      method: 'get',
-    };
-    let content = '';
+    app.el.nav.dataset.method = 'get';
 
     for (const content of app.data.content) {
-      params.url = `sections/${content.page}.html`;
+      if(content.page !== undefined) {
+        app.el.nav.dataset.url = `sections/${content.page}.html`;
+      }
+
       app.fn.menuItem(content.label, content.page);
 
       if (!content.page || content.page === 'group') continue;
-      //console.log(content);
+//    console.log(content);
 
       try {
-        const result = await app.flow.action.fetch(app.el.nav, params);
+        const result = await app.flow.action.fetch(app.el.nav);
         app.flow.tools.element.appendContent(
           app.el.main,
           `<section id="${content.page}">${result}</section><hr><div class="mb-5"><p><br></p></div>`);
@@ -358,6 +430,7 @@ app.fn = {
         console.log(err)
       }
     }
+    app.el.nav.dataset.url = '#'
     app.el.links = [].slice.call(app.el.nav.querySelectorAll('a[href^="#"]'));
     app.el.items = app.el.links.map(function (a) { return { a: a, el: document.getElementById(a.getAttribute('href').slice(1)) } }).filter(function (x) { return x.el });
   },
@@ -437,11 +510,15 @@ app.key = {
 document.addEventListener('DOMContentLoaded', async () => {
   // hljs.highlightAll();
 
-  app.flow = new AviFlow(app.actions, { autoInit: false });
+  app.flow = new AviFlow({
+    ...app.examples,
+    ...app.actions
+  }, { 
+    autoInit: false 
+  });
   app.fn.applyTheme();
 
   await app.fn.loadContent();
-  app.flow.register(app.examples);
   app.flow.init();
 
   console.log(app); //- uncomment to debug

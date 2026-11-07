@@ -1,7 +1,9 @@
-import { AviFlowCoreEngine} from './AviFlowCoreEngine.js';
-import { AviFlowActions} from './AviFlowActions.js';
+import { AviFlowCoreEngine } from './AviFlowCoreEngine.js';
+import { AviFlowActions } from './AviFlowActions.js';
 import { AviElement } from './tools/AviElement.js';
 import { AviText } from './tools/AviText.js';
+
+const UNSAFE_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
 
 /**
  * @class AviFlow
@@ -26,12 +28,21 @@ import { AviText } from './tools/AviText.js';
  *
  * ### Components
  * - **`event`**: A DOM event name, which may include modifiers:
- *   - Examples: ``"submit.prevent"``, ``"click.prevent.stop"``
+ *   - Examples: ``"submit.prevent"``, ``"click.prevent.stop"``, ``"scroll.passive.window"``
+ *   - Supported modifiers: ``prevent``, ``stop``, ``passive``, ``window``
  *   - **`.prevent`**: Invokes `event.preventDefault()` before action execution.
  *   - **`.stop`**: Invokes `event.stopPropagation()`.
- * - **`action`**: A string identifying a callable method within the flow's `action` registry.
+ *   - **`.passive`**: Registers the listener as passive (`{ passive: true }`), telling the
+ *     browser it will not call `preventDefault()`. If another flow on the same element and
+ *     event uses `.prevent`, `.passive` is ignored and a warning is logged.
+ *   - **`.window`**: Attaches the listener to `window` instead of the element, so the event
+ *     is caught wherever it fires (e.g. ``"resize.window"``, ``"keydown.window"``).
+ * - **`action`**: A string identifying a callable method within the flow's `action` object.
+ *   It may be a dotted path of any depth into nested objects: ``getTrigger.id``,
+ *   ``admin.users.remove``. An exact key (even one containing dots) takes
+ *   precedence over path resolution.
  * - **`target`**: A standard CSS selector string defining one or more elements that will receive the action's result.
- * 
+ *
  * ### Examples:
  *   data-flow="fetch -> #list"                      click, fetch, update #list
  *   data-flow="load"                                click, load
@@ -40,16 +51,27 @@ import { AviText } from './tools/AviText.js';
  *   data-flow="submit.prevent -> fetch -> #result"  ajax form
  *   data-flow="submit.prevent -> save -|"           ajax form, nothing to update
  *
+ * ### Providing actions
+ * Pass them to the constructor, or assign them to `flow.action` at any time:
+ *   new AviFlow({ save, admin: { users: { remove } } });
+ *   flow.action.reload = reload;
+ *
  * ### Usage and Behavior
- * - Malformed flow definitions (missing required components or incorrect 
- *   structure, e.g. an empty action, an empty target such as "fetch ->", more 
- *   than three parts, or "-|" after three parts) are logged as warnings and 
+ * - Malformed flow definitions (missing required components or incorrect
+ *   structure, e.g. an empty action, an empty target such as "fetch ->", more
+ *   than three parts, or "-|" after three parts) are logged as warnings and
  *   will not be registered.
- * - Modifiers are only recognised at the END of the event part 
+ * - Modifiers are only recognised at the END of the event part
  *   ("my.event" is a plain event name).
- * - Actions are executed via `action.call(htmlNode, flow)`, where `htmlNode` 
- *   is the initiating HTML element and `flow` is the `AviFlow` instance and 
- *   may be sync or async.
+ * - Actions are executed as `action.call(owner, element, event, target, flow)`, where `owner`
+ *   is the object that contains the function (`flow.action` for top-level actions,
+ *   the nested object for dotted paths). May be sync or async. Parameters, in order:
+ *   - **`element`**: the `HTMLElement` that triggered the flow.
+ *   - **`event`**: the DOM event object.
+ *   - **`target`**: the target CSS selector string from the flow definition.
+ *   - **`flow`**: the `AviFlow` instance.
+ *   All are optional to declare: an action only needs to list the parameters it uses,
+ *   up to the last one it needs, e.g. `(element, event) => { ... }`.
  */
 class AviFlow {
     #core = new AviFlowCoreEngine(this);
@@ -59,62 +81,83 @@ class AviFlow {
         text: AviText
     };
 
-
     constructor(actions = {}, options = {}) {
         this.action = {
             fetch: AviFlowActions.fetchData,
             ...actions
-        }
+        };
 
         this.option = {
             autoInit: true,
             root: typeof document !== 'undefined' ? document : null,
             ...options
-        }
+        };
 
         if (this.option.autoInit) this.init();
-    };
-    
+    }
 
     /**
      * Initializes the engine by finding and binding all elements with the ``data-flow`` attribute
-     * within the specified root element (or the document body by default).
+     * within the specified root (the ``document`` by default). The root itself is also bound
+     * if it carries the attribute.
      *
-     * @param {HTMLElement} [root] The container element to search for flow definitions.
+     * The root may be a CSS selector, in which case every matching element is initialized.
+     *
+     * Safe to call repeatedly, including on already bound content: the core engine's
+     * `controller` reuses existing listeners, replaces them when their options change,
+     * and removes those whose event is no longer declared.
+     *
+     * @param {Document|HTMLElement|string} [root] The container to search for flow definitions,
+     *        or a CSS selector matching one or more containers.
      * @returns {AviFlow} The current AviFlow instance.
      */
     init(root = this.option.root) {
         if (!root) return this;
 
-        const elements = [];
+        if (typeof root === 'string') {
+            document.querySelectorAll(root).forEach((el) => this.init(el));
+            return this;
+        }
 
-        if (root.nodeType === 1 && root.matches('[data-flow]')) elements.push(root);
-        if (typeof root.querySelectorAll === 'function') elements.push(...root.querySelectorAll('[data-flow]'));
-
-        elements.forEach((element) => this.#core.controller(element));
+        if (root.matches?.('[data-flow]')) this.#core.controller(root);
+        root.querySelectorAll?.('[data-flow]').forEach((el) => this.#core.controller(el));
 
         return this;
     }
-
 
     /**
-     * Registers a new action function to be available within the data flow system.
+     * Resolves an action name against `this.action`. The name may be a
+     * dotted path of any depth ("fetch", "getTrigger.id", "admin.users.remove").
      *
-     * @param {string} name The unique identifier for the new action.
-     * @param {function} actionFn The function to be executed, typically accepting (element, flow) as arguments.
-     * @returns {AviFlow} The current AviFlow instance.
+     * 1. An exact key wins (so flat keys that contain dots keep working).
+     * 2. Otherwise the path is walked one segment at a time through nested objects.
+     *
+     * Only objects are traversed (never functions), and "__proto__", "prototype",
+     * "constructor" and inherited Object.prototype members (toString...) are rejected.
+     *
+     * @param {string} path
+     * @returns {{fn: Function, owner: Object}|null} The function and the object that
+     *          contains it (used as `this` when the action is called), or null.
      */
-    register(name, actionFn) {
-        if (name && typeof name === 'object') {
-            for (const [key, fn] of Object.entries(name)) this.register(key, fn);
-        } else if (typeof name === 'string' && typeof actionFn === 'function') {
-            this.action[name] = actionFn;
-        } else {
-            console.warn("AviFlow.register: expected (string, function) or an object of functions.");
-        }
-        return this;
-    }
+    resolveAction(path) {
+        if (!this.action || typeof path !== 'string' || !path) return null;
 
+        if (Object.hasOwn(this.action, path)) {
+            return typeof this.action[path] === 'function' ? { fn: this.action[path], owner: this.action } : null;
+        }
+
+        let owner = this.action;
+        let node = this.action;
+        for (const key of path.split('.')) {
+            if (!key || UNSAFE_KEYS.has(key) || node === null || typeof node !== 'object') return null;
+            const next = node[key];
+            if (next === undefined || next === Object.prototype[key]) return null;
+            owner = node;
+            node = next;
+        }
+
+        return typeof node === 'function' ? { fn: node, owner } : null;
+    }
 }
 
 export default AviFlow;

@@ -1,10 +1,10 @@
 <h2>Architecture and installation</h2>
-<p There are at least 3 ways to use AviFlow Javascript utilitiy:</p>
+<p>There are four ways to use the AviFlow JavaScript utility:</p>
 <ol>
 <li><a href="#main-install-1_standalone-drop-in-traditional-script">As standalone drop in</a></li>
 <li><a href="#main-install-2_cdn-jsdelivr">Using CDN</a></li>
 <li><a href="#main-install-3_npm">Using npm</a></li>
-<li><a href="#main-install-4_local-es-module">Local ES Module</a></li>
+<li><a href="#main-install-4_local-es-module">Modern Application Setup (Local ES Module or CommonJS)</a></li>
 </ol>
 
 <h3 id="main-install-1_standalone-drop-in-traditional-script">1. Standalone Drop-in (Traditional Script)</h3>
@@ -36,8 +36,8 @@
 <div class="separator"></div>
 
 
-<h3 id="main-install-2_cdn-jsdelivr">2. Use CDN (jsDelivr) </h3>
-<p>This is the quickest way to try AviFlow, with no build step. Add the minified build to your page:</p>
+<h3 id="main-install-2_cdn-jsdelivr">2. CDN (jsDelivr)</h3>
+<p>The quickest way to try AviFlow, with no build step. Add the minified build to your page:</p>
 <pre><code>&lt;script 
   src="https://cdn.jsdelivr.net/npm/aviflow@2.0.0/dist/aviflow.min.js" 
   crossorigin="anonymous" 
@@ -53,11 +53,11 @@
 
 
 
-<h3 id="main-install-3_npm">3. npm </h3>
+<h3 id="main-install-3_npm">3. npm</h3>
 <p>Install the package from the npm registry:</p>
 <pre><code>npm i aviflow</code></pre>
 <p>Then import it in your code:</p>
-<pre><code>import AviFlow from 'aviflow'</code></pre>
+<pre><code>import AviFlow from 'aviflow';</code></pre>
 <ul>
   <li>Best for projects that use a bundler or build tool (Vite, webpack, Rollup, esbuild, etc.).</li>
   <li>Version management is handled by your <code>package.json</code> and lock file.</li>

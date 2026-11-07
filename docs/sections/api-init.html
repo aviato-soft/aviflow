@@ -1,7 +1,20 @@
-<h3>init(root)</h3>
-<span class="sig">init(root = this.option.root) → AviFlow</span>
-<p>Finds every <code>[data-flow]</code> element under <code>root</code> (including <code>root</code> itself if it matches) and hands each to the core controller.<br>
-Returns <code>this</code>; does nothing if <code>root</code> is falsy.<br>
-Use it for content added dynamically.</p>
+<h3>init(root?)</h3>
+<span class="sig">init(root = this.option.root) -> AviFlow</span>
+<p>Finds every <code>[data-flow]</code> element inside <code>root</code> (including <code>root</code> itself) and binds
+  it.
+  Defaults to <code>option.root</code>.
+  Returns the instance, so calls can be chained.</p>
+
+<p><code>root</code> can be a <code>Document</code>, an <code>HTMLElement</code>, or a CSS selector string.
+  A selector initializes every matching element, and is resolved against the global <code>document</code>.</p>
+
+<p>It is safe to call repeatedly, including on content that is already bound.
+  Existing listeners are reused, replaced when their options change, and removed when their event is no longer declared
+  in <code>data-flow</code>.
+  Removing or invalidating the attribute and calling <code>init()</code> again detaches the element's listeners.</p>
+
+<p>Use it to bind content added to the page after load:</p>
 <pre><code>const flow = new AviFlow({}, { autoInit: false });
-flow.init(document.querySelector('#panel'));</code></pre>
+flow.init();                                       // bind the whole document
+flow.init(document.querySelector('#new-content')); // bind a fragment
+flow.init('#new-content');                         // same, using a selector</code></pre>

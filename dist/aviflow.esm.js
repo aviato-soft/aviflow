@@ -514,88 +514,166 @@ var AviElement = class _AviElement {
 };
 
 // src/AviFlowCoreEngine.js
+var KNOWN_MODIFIERS = /* @__PURE__ */ new Set(["prevent", "stop", "passive", "window"]);
+var CACHE_LIMIT = 500;
 var AviFlowCoreEngine = class _AviFlowCoreEngine {
+  /** Parsed data-flow strings, keyed by the raw string (frozen results, or null for invalid). */
+  static #cache = /* @__PURE__ */ new Map();
+  /** Latest request token per target selector, used to discard stale async results. */
+  #latest = /* @__PURE__ */ new Map();
   constructor(flow) {
     this.flow = flow;
     this.core = this;
     this.boundElements = /* @__PURE__ */ new WeakMap();
   }
+  /**
+   * Binds (or re-syncs) the listeners declared in `element.dataset.flow`.
+   * Safe to call repeatedly: existing listeners are reused, replaced when their
+   * options change, and removed when their event is no longer declared.
+   *
+   * @param {Element} element
+   */
   controller(element) {
     if (!element?.dataset) return;
     const flows = _AviFlowCoreEngine.parseFlow(element.dataset.flow);
-    if (!flows) return;
+    let eventConfigs = this.boundElements.get(element);
+    if (!flows) {
+      if (eventConfigs) this.destroy(element);
+      return;
+    }
     const byKey = /* @__PURE__ */ new Map();
     for (const f of flows) {
       const key = `${f.onWindow ? "window" : "element"}:${f.event}`;
-      if (!byKey.has(key)) byKey.set(key, { event: f.event, onWindow: f.onWindow, passive: f.passive, list: [] });
-      const group = byKey.get(key);
-      group.passive = group.passive || f.passive;
+      let group = byKey.get(key);
+      if (!group) {
+        group = { event: f.event, onWindow: f.onWindow, anyPassive: false, anyPrevent: false, list: [] };
+        byKey.set(key, group);
+      }
+      group.anyPassive ||= f.passive;
+      group.anyPrevent ||= f.prevent;
       group.list.push(f);
     }
-    let eventConfigs = this.boundElements.get(element);
     if (!eventConfigs) {
       eventConfigs = /* @__PURE__ */ new Map();
       this.boundElements.set(element, eventConfigs);
     }
-    for (const [key, entry] of eventConfigs) {
-      if (!byKey.has(key)) entry.flows = [];
+    for (const key of [...eventConfigs.keys()]) {
+      if (!byKey.has(key)) this.#unbind(element, key);
     }
+    this.boundElements.set(element, eventConfigs);
     for (const [key, group] of byKey) {
+      if (group.anyPassive && group.anyPrevent) {
+        console.warn(`[AviFlow.core.controller] "passive" ignored for "${group.event}": a flow on the same event uses "prevent"`);
+      }
+      const passive = group.anyPassive && !group.anyPrevent;
       const existing = eventConfigs.get(key);
       if (existing) {
-        existing.flows = group.list;
-        continue;
+        if (existing.passive === passive) {
+          existing.flows = group.list;
+          continue;
+        }
+        existing.ac.abort();
       }
-      const entry = { flows: group.list };
+      const ac = new AbortController();
+      const entry = { flows: group.list, passive, ac };
       eventConfigs.set(key, entry);
       const host = group.onWindow ? window : element;
-      const options = group.passive ? { passive: true } : void 0;
+      const options = passive ? { passive: true, signal: ac.signal } : { signal: ac.signal };
       host.addEventListener(group.event, (e) => {
+        if (group.onWindow && !element.isConnected) {
+          this.#unbind(element, key);
+          return;
+        }
         for (const f of entry.flows) {
-          this.core.eventHandler(element, e, f.action, f.target, f.prevent, f.stop);
+          this.eventHandler(element, e, f.action, f.target, f.prevent, f.stop);
         }
       }, options);
     }
   }
+  /**
+   * Removes every listener bound to an element. Call this when an element is
+   * discarded (especially one with `.window` flows).
+   *
+   * @param {Element} element
+   */
+  destroy(element) {
+    const eventConfigs = this.boundElements.get(element);
+    if (!eventConfigs) return;
+    for (const entry of eventConfigs.values()) entry.ac.abort();
+    eventConfigs.clear();
+    this.boundElements.delete(element);
+  }
+  #unbind(element, key) {
+    const eventConfigs = this.boundElements.get(element);
+    const entry = eventConfigs?.get(key);
+    if (!entry) return;
+    entry.ac.abort();
+    eventConfigs.delete(key);
+    if (!eventConfigs.size) this.boundElements.delete(element);
+  }
+  /**
+   * Runs an action and applies its result to the target.
+   * Works the same for sync and async actions: targets are updated, then
+   * `flow.init(target)` binds any new data-flow in the injected content.
+   *
+   * @returns {*|Promise<*>|undefined} The action's content (or a promise of it).
+   */
   eventHandler(element, event, actionName, target, prevent, stop) {
-    if (prevent && typeof event?.preventDefault === "function") event.preventDefault();
-    if (stop && typeof event?.stopPropagation === "function") event.stopPropagation();
-    const actionFn = this.flow.action[actionName];
-    if (typeof actionFn !== "function") {
+    if (prevent) event?.preventDefault?.();
+    if (stop) event?.stopPropagation?.();
+    const resolved = this.flow.resolveAction(actionName);
+    if (!resolved) {
       console.warn(`[AviFlow.core.eventHandler] Action "${actionName}" is not defined`);
       return;
     }
-    let result;
+    const { fn: actionFn, owner } = resolved;
     const onError = (err) => console.error(`[AviFlow.core.eventHandler] Error on action "${actionName}"`, err);
+    let token = 0;
+    if (target) {
+      token = (this.#latest.get(target) ?? 0) + 1;
+      this.#latest.set(target, token);
+    }
+    const apply = (content) => {
+      if (target && this.#latest.get(target) !== token) return;
+      try {
+        _AviFlowCoreEngine.updateTargets(target, content);
+        if (target && content !== void 0) this.flow.init(target);
+      } catch (err) {
+        console.error(`[AviFlow.core.eventHandler] Error applying result of action "${actionName}"`, err);
+      }
+      return content;
+    };
     try {
-      result = actionFn(element, this.flow, event);
+      const result = actionFn.call(owner, element, event, target, this.flow);
+      return typeof result?.then === "function" ? Promise.resolve(result).then(apply, onError) : apply(result);
     } catch (err) {
       onError(err);
-      return;
     }
-    if (result && typeof result.then === "function") {
-      return Promise.resolve(result).then((content) => {
-        _AviFlowCoreEngine.updateTargets(target, content);
-      }).catch(onError);
-    }
-    _AviFlowCoreEngine.updateTargets(target, result);
-    this.flow.init(target);
-    return result;
   }
   /**
-  * Parses a string to determine the event, prevention flags, and propagation flags for the flow.
-  *
-  * @param {string} ``strEvent`` The flow string fragment (e.g., "click.prevent.stop").
-  * @returns {{event: string, prevent: boolean, stop: boolean}} An object defining the event and modifiers.
-  */
-  static parseEvent(strEvent) {
-    const [name, ...mods] = strEvent.split(".").map((s) => s.trim());
+   * Parses one event fragment such as "click.prevent.stop".
+   * The first dot starts the modifiers, so event names that contain dots
+   * (e.g. custom "app.ready") cannot be expressed.
+   * Supported modifiers: prevent, stop, passive, window.
+   * A missing (undefined) fragment is read as an empty one: event "click", no modifiers.
+   *
+   * @param {string} [strEvent='']
+   * @returns {{event: string, prevent: boolean, stop: boolean, passive: boolean, onWindow: boolean}}
+   */
+  static parseEvent(strEvent = "") {
+    const [name, ...rawMods] = strEvent.split(".").map((s) => s.trim());
+    const mods = new Set(rawMods);
+    for (const m of mods) {
+      if (!KNOWN_MODIFIERS.has(m)) {
+        console.warn(`[AviFlow.core.parseEvent] Unknown modifier "${m}" in "${strEvent}" (known: ${[...KNOWN_MODIFIERS].join(", ")})`);
+      }
+    }
     return {
       event: name || "click",
-      prevent: mods.includes("prevent"),
-      stop: mods.includes("stop"),
-      passive: mods.includes("passive"),
-      onWindow: mods.includes("window")
+      prevent: mods.has("prevent"),
+      stop: mods.has("stop"),
+      passive: mods.has("passive"),
+      onWindow: mods.has("window")
     };
   }
   /**
@@ -604,42 +682,53 @@ var AviFlowCoreEngine = class _AviFlowCoreEngine {
    *   "event -> action -> target"
    *   "[event1 -> action1 -> target1][event2 -> action2 -> target2]"
    *
-   * Each flow follows the formats:
-   * 1. ``event->action``
-   * 2. ``event->action->target``
-   * 3. ``action->target``
-   * (end with "-|" for no target)
+   * Each flow follows one of these formats:
+   * 1. `event -> action -> target`
+   * 2. `action -> target`            (event defaults to "click")
+   * 3. `event -> action -|`          (no target)
+   * 4. `action -|`                   (no target, event defaults to "click")
    *
-   * @param {string} flowString The flow definition string.
-   * @returns {Array<Object>|null} Array of `{event, action, target, prevent, stop}`, or null if nothing valid was parsed.
+   * Note: without "-|", two parts are read as `action -> target`, NOT `event -> action`.
+   *
+   * Results are cached by input string and are frozen: do not mutate them.
+   *
+   * @param {string} flowString
+   * @returns {ReadonlyArray<Readonly<{event: string, action: string, target: (string|null), prevent: boolean, stop: boolean, passive: boolean, onWindow: boolean}>>|null}
    */
   static parseFlow(flowString) {
     if (!flowString || typeof flowString !== "string") return null;
+    const cache = _AviFlowCoreEngine.#cache;
+    if (cache.has(flowString)) return cache.get(flowString);
+    let out = null;
     const parts = _AviFlowCoreEngine.splitFlows(flowString);
-    if (!parts) return null;
-    const flows = parts.map((p) => _AviFlowCoreEngine.parseSingleFlow(p)).filter(Boolean);
-    return flows.length ? flows : null;
+    if (parts) {
+      const flows = parts.map((p) => _AviFlowCoreEngine.parseSingleFlow(p)).filter(Boolean);
+      if (flows.length) out = Object.freeze(flows.map((f) => Object.freeze(f)));
+    }
+    if (cache.size >= CACHE_LIMIT) cache.delete(cache.keys().next().value);
+    cache.set(flowString, out);
+    return out;
   }
   /**
-   * Parses one flow (no surrounding brackets).
+   * Parses one flow (no surrounding brackets). See `parseFlow` for the formats.
    *
    * @param {string} flowString
-   * @returns {Object|null}
+   * @returns {{event: string, action: string, target: (string|null), prevent: boolean, stop: boolean, passive: boolean, onWindow: boolean}|null}
    */
   static parseSingleFlow(flowString) {
     if (!flowString || typeof flowString !== "string") return null;
     let src = flowString.trim();
     const noTarget = src.endsWith("-|");
     if (noTarget) src = src.slice(0, -2);
-    const parts = src.split("->").map((s) => s.trim());
+    const parts = _AviFlowCoreEngine.splitArrows(src);
     const max = noTarget ? 2 : 3;
     if (parts.length > max) {
       console.warn(
-        noTarget ? '[AviFlow.core.parseFlow] Too many parts before "-|" (max: event -> action -|)' : '[AviFlow.core.parseFlow] Too many "->" parts (max: event -> action -> target)'
+        noTarget ? '[AviFlow.core.parseSingleFlow] Too many parts before "-|" (max: event -> action -|)' : '[AviFlow.core.parseSingleFlow] Too many "->" parts (max: event -> action -> target)'
       );
       return null;
     }
-    let eventRaw = "click";
+    let eventRaw = "";
     let action;
     let target = null;
     if (noTarget) {
@@ -653,25 +742,60 @@ var AviFlowCoreEngine = class _AviFlowCoreEngine {
       [action] = parts;
     }
     if (!action) {
-      console.warn('[AviFlow.core.parseFlow] Missing "action"');
+      console.warn('[AviFlow.core.parseSingleFlow] Missing "action"');
       return null;
     }
     if (!noTarget && parts.length > 1 && !target) {
-      console.warn(`[AviFlow.core.parseFlow] Empty target: end the flow with "-|" when there is no target`);
+      console.warn('[AviFlow.core.parseSingleFlow] Empty target: end the flow with "-|" when there is no target');
       return null;
     }
-    if (eventRaw.startsWith(".")) eventRaw = "click" + eventRaw;
+    if (!eventRaw) eventRaw = "click";
+    else if (eventRaw.startsWith(".")) eventRaw = "click" + eventRaw;
     const { event, prevent, stop, passive, onWindow } = _AviFlowCoreEngine.parseEvent(eventRaw);
     return { event, action, target, prevent, stop, passive, onWindow };
   }
   /**
-   * Splits a data - flow string into individual flow strings.
-   * - "event -> action -> target"            => ["event -> action -> target"]
-  * - "[e1 -> a1 -> t1][e2 -> a2 -> t2]"     => ["e1 -> a1 -> t1", "e2 -> a2 -> t2"]
-      * Brackets inside a group(e.g.attribute selectors) are respected via depth tracking.
+   * Splits a string on "->", ignoring arrows inside quotes or square brackets
+   * (e.g. the selector `[data-x="a->b"]`). Backslash escapes inside quotes are honored.
    *
-   * @param { string } flowString
-  * @returns { string[] | null }
+   * @param {string} src
+   * @returns {string[]} Trimmed parts.
+   */
+  static splitArrows(src) {
+    const parts = [];
+    let depth = 0;
+    let quote = null;
+    let start = 0;
+    for (let i = 0; i < src.length; i++) {
+      const ch = src[i];
+      if (quote) {
+        if (ch === "\\") i++;
+        else if (ch === quote) quote = null;
+        continue;
+      }
+      if (ch === '"' || ch === "'") quote = ch;
+      else if (ch === "[") depth++;
+      else if (ch === "]") depth = Math.max(0, depth - 1);
+      else if (depth === 0 && ch === "-" && src[i + 1] === ">") {
+        parts.push(src.slice(start, i).trim());
+        start = i + 2;
+        i++;
+      }
+    }
+    parts.push(src.slice(start).trim());
+    return parts;
+  }
+  /**
+   * Splits a data-flow string into individual flow strings.
+   *   "event -> action -> target"          => ["event -> action -> target"]
+   *   "[e1 -> a1 -> t1][e2 -> a2 -> t2]"   => ["e1 -> a1 -> t1", "e2 -> a2 -> t2"]
+   *
+   * Brackets inside a group (e.g. attribute selectors) are respected via depth
+   * tracking. Quoted text inside a group is skipped, and backslash escapes
+   * inside quotes are honored. An unbalanced quote makes the whole string invalid.
+   *
+   * @param {string} flowString
+   * @returns {string[]|null}
    */
   static splitFlows(flowString) {
     const src = flowString.trim();
@@ -683,7 +807,8 @@ var AviFlowCoreEngine = class _AviFlowCoreEngine {
     for (let i = 0; i < src.length; i++) {
       const ch = src[i];
       if (quote) {
-        if (ch === quote) quote = null;
+        if (ch === "\\") i++;
+        else if (ch === quote) quote = null;
         continue;
       }
       if (depth === 0) {
@@ -691,7 +816,7 @@ var AviFlowCoreEngine = class _AviFlowCoreEngine {
           start = i + 1;
           depth++;
         } else if (!/\s/.test(ch)) {
-          console.warn(`[AviFlow.core.parseFlow] Unexpected "${ch}" between flow groups`);
+          console.warn(`[AviFlow.core.splitFlows] Unexpected "${ch}" between flow groups`);
           return null;
         }
         continue;
@@ -706,29 +831,42 @@ var AviFlowCoreEngine = class _AviFlowCoreEngine {
       }
     }
     if (depth !== 0 || quote) {
-      console.warn("[AviFlow.core.parseFlow] Unbalanced brackets or quotes in multi-flow definition");
+      console.warn("[AviFlow.core.splitFlows] Unbalanced brackets or quotes in multi-flow definition");
       return null;
     }
     return result;
   }
   /**
-       * Updates the specified set of target elements with the provided content.
-       * The targets are determined by querying the DOM using the supplied CSS selector.
-       *
-       * @param {string} ``selector`` The CSS selector string defining the target elements.
-       * @param {*} ``content`` The content (HTML, string, or object) to be injected into the targets.
-       * @returns {*} The content itself after applying it to all targets.
-       */
-  static updateTargets(selector, content) {
+   * Updates every element matching `selector` with `content`.
+   * One failing element does not stop the others. `null` content is forwarded
+   * to `AviElement.setContent`; only `undefined` means "nothing to apply".
+   *
+   * @param {string} selector CSS selector for the target elements.
+   * @param {*} content HTML, string, or object to inject.
+   * @param {ParentNode} [root=document] Optional scope for the selector query.
+   * @returns {*|undefined} The content if it was applied, otherwise undefined
+   *                        (no selector, no content, invalid selector, or no match).
+   */
+  static updateTargets(selector, content, root = document) {
     if (!selector || typeof selector !== "string" || content === void 0) return;
     let targets;
     try {
-      targets = document.querySelectorAll(selector);
-    } catch (err) {
+      targets = root.querySelectorAll(selector);
+    } catch {
       console.warn(`[AviFlow.core.updateTargets] Invalid target selector "${selector}"`);
       return;
     }
-    targets.forEach((el) => AviElement.setContent(el, content));
+    if (!targets.length) {
+      console.warn(`[AviFlow.core.updateTargets] No element matches "${selector}"`);
+      return;
+    }
+    for (const el of targets) {
+      try {
+        AviElement.setContent(el, content);
+      } catch (err) {
+        console.error("[AviFlow.core.updateTargets] setContent failed", el, err);
+      }
+    }
     return content;
   }
 };
@@ -736,74 +874,68 @@ var AviFlowCoreEngine = class _AviFlowCoreEngine {
 // src/AviFlowActions.js
 var AviFlowActions = class {
   /**
-   * Performs an asynchronous data retrieval operation using the Fetch API.
-   * This method manages HTTP communication, including parameter serialization,
-   * request headers, and automatic response parsing into JSON or text format.
-   * It also manages pending state visual indicators via ``AviElement``.
+   * Sends an HTTP request built from the element's data attributes and returns the parsed response
+   * (JSON object, or HTML string when the response is `text/html`).
    *
-   * @param {HTMLElement} ``element`` The element containing the URL and request configuration.
-   * @param {Object} [``opt``={}] Optional configuration parameters for the HTTP request.
-   * @returns {Promise<Object|string>} A promise that resolves with the parsed response data (JSON object or HTML string), or rejects on error.
+   * - GET/HEAD: params go in the query string.
+   * - POST/PUT: params are sent as FormData.
+   * - Other methods: params are sent as a JSON body.
+   *
+   * Optional hooks (action names resolved through `flow.resolveAction`), called as
+   * `hook(payload, element, event, targetSelector, flow)`:
+   * - `onSucces`: JSON response with a truthy `success`   (payload = data)
+   * - `onFail`:   JSON response with a falsy `success`    (payload = data)
+   * - `onError`:  any thrown error, which is then re-thrown (payload = error)
+   *
+   * The element's pending state is on while the request runs.
+   *
+   * @param {HTMLElement} element The element containing the URL and request configuration.
+   * @param {Event} event The DOM event that triggered the flow.
+   * @param {string} targetSelector The target CSS selector of the flow.
+   * @param {AviFlow} flow The AviFlow instance.
+   * @returns {Promise<Object|string|null>} The parsed response, or null when there is no element.
    */
-  static fetchData(element, opt = {}) {
-    let data = null;
-    if (!element) {
-      return data;
-    }
-    const elementDataset = AviElement.getDataset(element);
-    AviElement.togglePendingState(element, true);
-    const options = {
-      headers: new Headers({
-        "X-Requested-With": "XMLHttpRequest"
-      }),
-      method: (elementDataset.method || "POST").toUpperCase(),
-      params: AviElement.getParams(element),
-      url: elementDataset.url || "/",
-      ...opt
+  static async fetchData(element, event, targetSelector, flow) {
+    if (!element) return null;
+    const dataset = AviElement.getDataset(element);
+    const callHook = (name, payload) => {
+      const resolved = flow?.resolveAction(name);
+      resolved?.fn.call(resolved.owner, payload, element, event, targetSelector, flow);
     };
-    if (options.method === "GET" || options.method === "HEAD") {
-      if (Object.keys(options.params).length > 0) {
-        options.url += (options.url.includes("?") ? "&" : "?") + new URLSearchParams(options.params).toString();
-      }
+    const { method, params, url: baseUrl } = {
+      method: (dataset.method || "POST").toUpperCase(),
+      params: AviElement.getParams(element),
+      url: dataset.url || (element.tagName === "A" ? element.getAttribute("href") : null) || "/",
+      ...AviElement.getParams(element, "opt")
+    };
+    const headers = new Headers({ "X-Requested-With": "XMLHttpRequest" });
+    const hasParams = Object.keys(params).length > 0;
+    let url = baseUrl;
+    let body;
+    if (method === "GET" || method === "HEAD") {
+      if (hasParams) url += `${url.includes("?") ? "&" : "?"}${new URLSearchParams(params)}`;
+    } else if (method === "POST" || method === "PUT") {
+      body = new FormData();
+      Object.entries(params).forEach(([key, value]) => body.append(key, value));
     } else {
-      if (Object.keys(options.params).length > 0) {
-        options.body = JSON.stringify(options.params);
+      headers.set("Content-Type", "application/json; charset=UTF-8");
+      if (hasParams) body = JSON.stringify(params);
+    }
+    AviElement.togglePendingState(element, true);
+    try {
+      const response = await fetch(url, { body, headers, method });
+      const isHtml = (response.headers.get("content-type") || "").includes("text/html");
+      const data = isHtml ? await response.text() : await response.json();
+      if (data && typeof data === "object") {
+        callHook(data.success ? dataset.onSucces : dataset.onFail, data);
       }
+      return data;
+    } catch (err) {
+      callHook(dataset.onError, err);
+      throw err;
+    } finally {
+      AviElement.togglePendingState(element, false);
     }
-    if (options.method === "POST" || options.method === "PUT") {
-      const formData = new FormData();
-      Object.entries(options.params).forEach(([key, value]) => {
-        formData.append(key, value);
-      });
-      options.body = formData;
-    } else {
-      options.headers.append("Content-Type", "application/json; charset=UTF-8");
-    }
-    return new Promise((resolve, reject) => {
-      fetch(options.url, {
-        body: options.body,
-        headers: options.headers,
-        method: options.method
-      }).then((response) => {
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.includes("text/html")) {
-          return response.text();
-        }
-        return response.json();
-      }).then((data2) => {
-        if (typeof data2 === "string") {
-          resolve(data2);
-        } else if (data2.success) {
-          resolve(data2);
-        } else {
-          reject(data2.error || "[AviFlow.action.fetch] Error fetching data");
-        }
-      }).catch((err) => {
-        reject(err);
-      }).finally(() => {
-        AviElement.togglePendingState(element, false);
-      });
-    });
   }
 };
 
@@ -850,6 +982,7 @@ var AviText = class {
 };
 
 // src/AviFlow.js
+var UNSAFE_KEYS = /* @__PURE__ */ new Set(["__proto__", "prototype", "constructor"]);
 var AviFlow = class {
   #core = new AviFlowCoreEngine(this);
   tools = {
@@ -870,35 +1003,58 @@ var AviFlow = class {
   }
   /**
    * Initializes the engine by finding and binding all elements with the ``data-flow`` attribute
-   * within the specified root element (or the document body by default).
+   * within the specified root (the ``document`` by default). The root itself is also bound
+   * if it carries the attribute.
    *
-   * @param {HTMLElement} [root] The container element to search for flow definitions.
+   * The root may be a CSS selector, in which case every matching element is initialized.
+   *
+   * Safe to call repeatedly, including on already bound content: the core engine's
+   * `controller` reuses existing listeners, replaces them when their options change,
+   * and removes those whose event is no longer declared.
+   *
+   * @param {Document|HTMLElement|string} [root] The container to search for flow definitions,
+   *        or a CSS selector matching one or more containers.
    * @returns {AviFlow} The current AviFlow instance.
    */
   init(root = this.option.root) {
     if (!root) return this;
-    const elements = [];
-    if (root.nodeType === 1 && root.matches("[data-flow]")) elements.push(root);
-    if (typeof root.querySelectorAll === "function") elements.push(...root.querySelectorAll("[data-flow]"));
-    elements.forEach((element) => this.#core.controller(element));
+    if (typeof root === "string") {
+      document.querySelectorAll(root).forEach((el) => this.init(el));
+      return this;
+    }
+    if (root.matches?.("[data-flow]")) this.#core.controller(root);
+    root.querySelectorAll?.("[data-flow]").forEach((el) => this.#core.controller(el));
     return this;
   }
   /**
-   * Registers a new action function to be available within the data flow system.
+   * Resolves an action name against `this.action`. The name may be a
+   * dotted path of any depth ("fetch", "getTrigger.id", "admin.users.remove").
    *
-   * @param {string} name The unique identifier for the new action.
-   * @param {function} actionFn The function to be executed, typically accepting (element, flow) as arguments.
-   * @returns {AviFlow} The current AviFlow instance.
+   * 1. An exact key wins (so flat keys that contain dots keep working).
+   * 2. Otherwise the path is walked one segment at a time through nested objects.
+   *
+   * Only objects are traversed (never functions), and "__proto__", "prototype",
+   * "constructor" and inherited Object.prototype members (toString...) are rejected.
+   *
+   * @param {string} path
+   * @returns {{fn: Function, owner: Object}|null} The function and the object that
+   *          contains it (used as `this` when the action is called), or null.
    */
-  register(name, actionFn) {
-    if (name && typeof name === "object") {
-      for (const [key, fn] of Object.entries(name)) this.register(key, fn);
-    } else if (typeof name === "string" && typeof actionFn === "function") {
-      this.action[name] = actionFn;
-    } else {
-      console.warn("AviFlow.register: expected (string, function) or an object of functions.");
+  resolveAction(path) {
+    if (!this.action || typeof path !== "string" || !path) return null;
+    if (Object.hasOwn(this.action, path)) {
+      return typeof this.action[path] === "function" ? { fn: this.action[path], owner: this.action } : null;
     }
-    return this;
+    let owner = this.action;
+    let node = this.action;
+    for (const key of path.split(".")) {
+      if (!key || UNSAFE_KEYS.has(key) || node === null || typeof node !== "object") return null;
+      const next = node[key];
+      if (next === void 0 || next === Object.prototype[key]) return null;
+      owner = node;
+      node = next;
+    }
+    return typeof node === "function" ? { fn: node, owner } : null;
   }
 };
 var AviFlow_default = AviFlow;

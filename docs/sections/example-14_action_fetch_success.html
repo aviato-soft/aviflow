@@ -1,0 +1,33 @@
+<!-- Case 14: Fetch Success Handlers-->
+<h2>Example: Handling Fetch Success</h2>
+<h3 class="code">[Event] -> fetch -> [Target]</h3>
+<span class="sig">data-flow="fetch -> #output-14" data-on-success="fetchSuccess"</span>
+
+<div class="example">
+  <p class"info"><code>data-flow="fetch -> #output-14"</code> is an abreviation for <code>data-flow="click -> fetch -> #output-14"</code></p>
+
+
+  <pre><code>&lt;a href='data:application/json;charset=utf-8,"It works!"' data-flow="[fetch -&gt; #output-14]" data-method="get"&gt;Link&lt;/a&gt;
+&lt;div id="output-14"&lt;&gt;/div&lt;
+
+&lt;script&gt;
+  const flow = new AviFlow({
+    fetchSuccess: () => {
+    }
+  });
+&lt;/script&gt;
+  
+  </code></pre>
+
+
+  <div class="form">
+    <button  
+      data-flow="fetch" 
+      data-method="get"
+      data-on-succes="fetchCustomHandler.on.success"
+      data-url='data:application/json;charset=utf-8,{"success": true, "html": "It works!"}'>Go</a>
+  </div>
+
+  <div id="output-14" class="output"><em>Output will appear here...</em></div>
+
+</div>
