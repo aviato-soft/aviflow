@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <img alt="version" src="https://img.shields.io/badge/version-2.0.0-e33ecb">
+  <img alt="version" src="https://img.shields.io/badge/version-2.0.1-e33ecb">
   <img alt="module" src="https://img.shields.io/badge/module-ESM-blue">
   <img alt="dependencies" src="https://img.shields.io/badge/dependencies-0-brightgreen">
 </p>
@@ -69,7 +69,7 @@ Download the file directly from the repository, [github.com/aviato-soft/aviflow]
 The quickest way to try AviFlow, with no build step. Add the minified build to your page:
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/aviflow@2.0.0/dist/aviflow.min.js" crossorigin="anonymous" integrity="sha512-Wq2p7SfSecIiXY9s0Sc3HAZ66LrQbxadI9ckg+ISl6u4ZyNPRW7E6mHLTPnlBKhZMyAIKnkJ9PjiPblPA9mkGQ=="></script>
+<script src="https://cdn.jsdelivr.net/npm/aviflow@2.0.1/dist/aviflow.min.js" crossorigin="anonymous" integrity="sha512-z2aj0ZmYFFRKIAWsYAmPHHHnTMMluk0fPQVWAyLMxukQBHrFzyOuYvLJSnR/6GZGEITlWS1fho9zEGAg4Lq8Pg=="></script>
 ```
 
 - The version is pinned (`@2.0.0`), so your page will not change unexpectedly when a new release is published.
