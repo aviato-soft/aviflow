@@ -7,19 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [WIP]
 ### Added
-+ Add more examples
-+ Add tutorial:
-    1. load
-    2. create fn.action
-    3. set data-event to trigger fn.action
-    4. set data-target to watch the execution
-
 ### Changed
-+ Change examples UI
+### Fixed
+### Removed
 
 
 ## [Unreleased]
-Full refactoring prepare for v.2.0.0
 ### Added
 - create docs as github pages
 - AviFlow.js - the main file
@@ -34,6 +27,7 @@ Full refactoring prepare for v.2.0.0
 - force node v.24 for github workflows
 - update github workflow actions from v4 to v7
 - use ubuntu 26.04 for  github workflow actions
+- Change examples UI
 - update jest version to 30.5.2
 
 ### Removed
