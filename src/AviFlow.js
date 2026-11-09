@@ -1,7 +1,7 @@
 import { AviFlowCoreEngine } from './AviFlowCoreEngine.js';
 import { AviFlowActions } from './AviFlowActions.js';
 import { AviElement } from './tools/AviElement.js';
-import { AviText } from './tools/AviText.js';
+// import { AviText } from './tools/AviText.js';
 
 const UNSAFE_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
 
@@ -51,6 +51,17 @@ const UNSAFE_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
  *   data-flow="submit.prevent -> fetch -> #result"  ajax form
  *   data-flow="submit.prevent -> save -|"           ajax form, nothing to update
  *
+ * ### Built-in actions
+ * Registered by default (they can be overridden by passing an action with the same name):
+ *   - **`fetch`**: `AviFlowActions.fetchData`. Sends an HTTP request built from the element's
+ *     data attributes and returns the parsed response.
+ *   - **`value`**: `AviFlowActions.elementValue`. Returns the element's value: `true`/`false`
+ *     for checkboxes, `value` for inputs/textareas/selects, `innerText` for other elements,
+ *     or `null`.
+ *
+ *   data-flow="input -> value -> #preview"         copy the input's value into #preview
+ *   data-flow="change -> value -> #state"          checkbox checked state (true / false)
+ *
  * ### Providing actions
  * Pass them to the constructor, or assign them to `flow.action` at any time:
  *   new AviFlow({ save, admin: { users: { remove } } });
@@ -78,12 +89,20 @@ class AviFlow {
 
     tools = {
         element: AviElement,
-        text: AviText
+ //     text: AviText
     };
 
+    /**
+     * @param {Object<string, Function|Object>} [actions] Extra actions, merged over the built-in
+     *        ones (`fetch`, `value`). Values may be functions or nested objects of functions.
+     * @param {Object} [options]
+     * @param {boolean} [options.autoInit=true] Bind all `data-flow` elements on construction.
+     * @param {Document|HTMLElement|string|null} [options.root=document] Default root for `init()`.
+     */
     constructor(actions = {}, options = {}) {
         this.action = {
             fetch: AviFlowActions.fetchData,
+            value: AviFlowActions.elementValue,
             ...actions
         };
 

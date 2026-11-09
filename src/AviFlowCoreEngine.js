@@ -148,8 +148,21 @@ export class AviFlowCoreEngine {
         const { fn: actionFn, owner } = resolved;
         
 
-        const onError = (err) =>
+        // Errors of the action (sync throw or rejected promise): a `data-on-error="actionName"`
+        // hook on the element handles it, otherwise it is logged.
+        const onError = (err) => {
+            const hookName = AviElement.getDataset(element)?.onError;
+            const hook = hookName && this.flow.resolveAction(hookName);
+            if (hook) {
+                try {
+                    hook.fn.call(hook.owner, err, element, event, target, this.flow);
+                    return; // handled: no console error
+                } catch (hookErr) {
+                    console.error(`[AviFlow.core.eventHandler] Error hook "${hookName}" failed`, hookErr);
+                }
+            }
             console.error(`[AviFlow.core.eventHandler] Error on action "${actionName}"`, err);
+        };
 
         // Newest call per target wins: a slow older async result is discarded
         let token = 0;

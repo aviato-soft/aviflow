@@ -1,0 +1,36 @@
+<!-- Case 16: Fetch from anchor -->
+<h2>Example: Fetch using form values for fetch parameters</h2>
+<h3 class="code">[Event] -> fetch -> [Target]</h3>
+<span class="sig">data-flow="fetch -> #output-16"</span>
+
+<div class="example">
+  <p class"info"><code>data-flow="fetch -> #output-16"</code> is an abreviation for <code>data-flow="click -> fetch -> #output-16"</code></p>
+
+
+  <pre><code>&lt;form 
+    method="post" 
+    action='https://jsonplaceholder.typicode.com/users' 
+    data-flow="submit.prevent -&gt; fetch -&gt; #output-16"&gt;
+  &lt;p&gt;&lt;label for="user-id"&gt;User id:&lt;/label&gt;&lt;input type="text" id="user-id" name="user-id"&gt;&lt;/p&gt;
+  &lt;p&gt;&lt;label for="title"&gt;Title:&lt;/label&gt;&lt;input type="text" id="title" name="title"&gt;&lt;/p&gt;
+  &lt;p&gt;&lt;button type="submit"&gt;Submit button&lt;/button&gt;&lt;/p&gt;
+&lt;/form&gt;
+  
+&lt;div id="output-16" class="output"&gt;&lt;em&gt;Output will appear here...&lt;/em&gt;&lt;/div&gt;
+
+&lt;script&gt;
+  const flow = new AviFlow();
+&lt;/script&gt;</code></pre>
+
+
+  <div class="form">
+    <form method="post" action='https://jsonplaceholder.typicode.com/users' data-flow="submit.prevent -> fetch -> #output-16">
+      <p><label for="user-id">User id:</label><input type="text" id="user-id" name="user-id"></p>
+      <p><label for="title">Title:</label><input type="text" id="title" name="title"></p>
+      <p><button type="submit">Submit button</button></p>
+    </form>
+  </div>
+
+  <div id="output-16" class="output"><em>Output will appear here...</em></div>
+
+</div>

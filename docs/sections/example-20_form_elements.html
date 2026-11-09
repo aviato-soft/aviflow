@@ -8,12 +8,42 @@
 
   <div class="form">
     <p>
-      <button data-flow="html.decode -> #output-20">Decode Html</button>
-      <button data-flow="html.encode -> #output-20">Encode Html</button>
+      <label for="testSelect">Choose one color:</label>
+      <select 
+        data-flow="change -> value -> #output-20-span"
+        id="testSelect">
+        <option>Black</option>
+        <option>Blue</option>
+        <option>Green</option>
+        <option>Red</option>
+        <option>White</option>
+      </select>
     </p>
+
+    <p>
+      <input 
+        data-flow="change -> value -> #output-20-span"
+        id="testCheckbox"
+        type="checkbox"
+        value="set">
+      <label for="testCheckbox">Click to toggle</label>
+    </p>
+
+    <p>
+      <input type="radio" name="radioColor" id="rdColorRed" value="red" data-flow="change -> value -> #output-20-span"><label for="rdColorRed">Red</label>
+      <input type="radio" name="radioColor" id="rdColorGreen" value="green" data-flow="change -> value -> #output-20-span"><label for="rdColorGreen">Green</label>
+      <input type="radio" name="radioColor" id="rdColorBlue" value="blue" data-flow="change -> value -> #output-20-span"><label for="rdColorBlue">Blue</label>
+
+    </p>
+    <p>
+      <button data-flow="html.decode -> #output-20-textarea">Decode Html</button>
+      <button data-flow="html.encode -> #output-20-textarea">Encode Html</button>
+    </p>
+
   </div>
 
   <div class="output">
-    <textarea id="output-20" placeholder="paste html code here to escape it"></textarea>
+    <p><textarea id="output-20" placeholder="paste html code here to escape it"></textarea></p>
+    <P><span id="output-20-span"></span></P>
   </div>
 </div>

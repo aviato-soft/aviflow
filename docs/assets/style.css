@@ -1,12 +1,12 @@
 :root {
   --bg: #fff;
-  --fg: #1f2430;
+  --fg: #112233;
   --mut: #667085;
   --bd: #e3e6ec;
   --side: #f6f7fa;
-  --code: #ee99ee;
-  --acc: #4f46e5;
-  --code-acc: #6699cc;
+  --code: #eeeeee;
+  --acc: #330099;
+  --code-acc: #113399;
   --ok: #0f766e;
   --warn: #b45309;
   --height-header: 4rem;
@@ -372,8 +372,12 @@ header {
 .find button:hover,
 .tools a:hover,
 .tools button:hover {
+  background: var(--code);
+  color: var(--acc)
+/*
   background: var(--bd);
   color: var(--acc)
+  */
 }
 
 .tools {
@@ -504,7 +508,8 @@ hr {
 }
 
 .example .form button:hover{
-  background-color: var(--acc);
+  background: var(--code);
+  color: var(--acc);
   cursor: pointer;
 }
 
@@ -529,15 +534,27 @@ hr {
   padding: 2rem 1rem;
 }
 
-.example-5{
+.example .output.flex-output{
   display: flex;
 }
 
-.example-5>div{
+.example .output.flex-output>div{
   border: 1px solid var(--bd);
   flex: auto;
   margin: 0 1rem;
   padding: 1rem;
 }
 
+.example .output.flex-output>span{
+  flex: auto;
+  margin: 1rem 0;
+  text-align: right;
+}
+
+.example label{
+  display: inline-block;
+  min-width: 8rem;
+  padding-right: 1rem;
+  text-align: right
+}
 

@@ -30,7 +30,13 @@ if (typeof globalThis.Headers === 'undefined') {
 }
 
 // Builds a fake fetch Response.
-const makeResponse = ({ contentType = 'application/json', json = {}, text = '', jsonError = null } = {}) => ({
+const makeResponse = ({
+  contentType = 'application/json', json = {}, text = '', jsonError = null,
+  ok = true, status = 200, statusText = 'OK'
+} = {}) => ({
+  ok,
+  status,
+  statusText,
   headers: {
     get: jest.fn((name) => (String(name).toLowerCase() === 'content-type' ? contentType : null))
   },
@@ -237,7 +243,7 @@ describe('AviFlow / Examples', () => {
 
   // ... //
 
-  
+
   test('Example 10: Action Fetch Minimal', async () => {
     const mockData = { id: 101, title: 'Simulated Post' };
 
@@ -380,5 +386,159 @@ describe('AviFlow / Examples', () => {
 
     fetch.mockClear();
   });
+});
 
+
+describe('Example 13: Action Fetch Error Handler', () => {
+  const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
+  let errorSpy;
+  let handler;
+  let flow;
+  let trigger;
+  let target;
+
+  const html = (attrs = 'data-on-error="fetchCustomHandler.on.error"') => `
+<button
+  data-flow="fetch -> #output-13"
+  data-method="get"
+  ${attrs}
+  data-url="/invalid-url-404"
+  id="trigger">Bad URL</button>
+<div id="output-13" class="output"><em>Output will appear here...</em></div>`;
+
+  const mount = (attrs) => {
+    document.body.innerHTML = html(attrs);
+    trigger = document.getElementById('trigger');
+    target = document.getElementById('output-13');
+    flow = new AviFlow({
+      fetchCustomHandler: { on: { error: handler } }
+    });
+  };
+
+  beforeEach(() => {
+    // errors without a data-on-error hook are logged by the engine: keep the output clean
+    errorSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
+    handler = jest.fn(() => {
+      document.getElementById('output-13').innerHTML = 'custom error';
+    });
+  });
+
+  afterEach(() => {
+    errorSpy.mockRestore();
+  });
+
+  // NOTE: the global fetch mock resolves with a valid JSON response by default,
+  // so a "bad URL" never fails on its own: the failure has to be simulated.
+  test('should call data-on-error when fetch rejects (network failure)', async () => {
+    const networkError = new TypeError('Failed to fetch');
+    global.fetch.mockRejectedValue(networkError);
+    mount();
+
+    trigger.click();
+    await flush();
+
+    expect(fetchCall()[1].method).toBe('GET');
+    expect(handler).toHaveBeenCalledTimes(1);
+    const [err, element, event, targetSelector, flowArg] = handler.mock.calls[0];
+    expect(err).toBe(networkError);
+    expect(element).toBe(trigger);
+    expect(event.type).toBe('click');
+    expect(targetSelector).toBe('#output-13');
+    expect(flowArg).toBe(flow);
+    expect(target.innerHTML).toBe('custom error');
+  });
+
+  test('should call data-on-error when the response body is not valid JSON', async () => {
+    const parseError = new SyntaxError('Unexpected token < in JSON');
+    global.fetch.mockResolvedValue(makeResponse({ jsonError: parseError }));
+    mount();
+
+    trigger.click();
+    await flush();
+
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(handler.mock.calls[0][0]).toBe(parseError);
+    expect(target.innerHTML).toBe('custom error');
+  });
+
+  test('should call data-on-error with an HTTP error when the response status is not ok (404)', async () => {
+    global.fetch.mockResolvedValue(makeResponse({ ok: false, status: 404, statusText: 'Not Found' }));
+    mount();
+
+    trigger.click();
+    await flush();
+
+    expect(fetchCall()[1].method).toBe('GET');
+    expect(handler).toHaveBeenCalledTimes(1);
+    const [err, element] = handler.mock.calls[0];
+    expect(err).toBeInstanceOf(Error);
+    expect(err.message).toBe('HTTP 404 Not Found');
+    expect(element).toBe(trigger);
+    expect(target.innerHTML).toBe('custom error'); // the error page is not written to the target
+    expect(errorSpy).not.toHaveBeenCalled();
+  });
+
+  test('should log the HTTP error when the response is not ok and there is no data-on-error', async () => {
+    global.fetch.mockResolvedValue(makeResponse({ ok: false, status: 500, statusText: 'Internal Server Error' }));
+    mount('');
+
+    trigger.click();
+    await flush();
+
+    expect(handler).not.toHaveBeenCalled();
+    expect(target.innerHTML).toContain('Output will appear here');
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+    expect(errorSpy.mock.calls[0][0]).toBe('[AviFlow.core.eventHandler] Error on action "fetch"');
+    expect(errorSpy.mock.calls[0][1].message).toBe('HTTP 500 Internal Server Error');
+  });
+
+  test('should not log the error when data-on-error handled it (no re-throw)', async () => {
+    global.fetch.mockRejectedValue(new TypeError('Failed to fetch'));
+    mount();
+
+    trigger.click();
+    await flush();
+
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(errorSpy).not.toHaveBeenCalled();
+    expect(target.innerHTML).toBe('custom error'); // not overwritten by the engine
+  });
+
+  test('should not call data-on-error when the request succeeds', async () => {
+    global.fetch.mockResolvedValue(makeResponse({ json: { success: true, html: 'ok' } }));
+    mount();
+
+    trigger.click();
+    await flush();
+
+    expect(handler).not.toHaveBeenCalled();
+    expect(errorSpy).not.toHaveBeenCalled();
+  });
+
+  test('should still log the error when there is no data-on-error attribute', async () => {
+    const networkError = new TypeError('Failed to fetch');
+    global.fetch.mockRejectedValue(networkError);
+    mount('');
+
+    trigger.click();
+    await flush();
+
+    expect(handler).not.toHaveBeenCalled();
+    expect(target.innerHTML).toContain('Output will appear here');
+    expect(errorSpy).toHaveBeenCalledWith('[AviFlow.core.eventHandler] Error on action "fetch"', networkError);
+  });
+
+  test('should not break when data-on-error names an action that does not exist', async () => {
+    global.fetch.mockRejectedValue(new TypeError('Failed to fetch'));
+    mount('data-on-error="doesNotExist"');
+
+    trigger.click();
+    await flush();
+
+    expect(handler).not.toHaveBeenCalled();
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Error on action "fetch"'),
+      expect.anything()
+    );
+  });
 });

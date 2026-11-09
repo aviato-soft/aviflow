@@ -652,7 +652,19 @@ var AviFlowCoreEngine = class _AviFlowCoreEngine {
       return;
     }
     const { fn: actionFn, owner } = resolved;
-    const onError = (err) => console.error(`[AviFlow.core.eventHandler] Error on action "${actionName}"`, err);
+    const onError = (err) => {
+      const hookName = AviElement.getDataset(element)?.onError;
+      const hook = hookName && this.flow.resolveAction(hookName);
+      if (hook) {
+        try {
+          hook.fn.call(hook.owner, err, element, event, target, this.flow);
+          return;
+        } catch (hookErr) {
+          console.error(`[AviFlow.core.eventHandler] Error hook "${hookName}" failed`, hookErr);
+        }
+      }
+      console.error(`[AviFlow.core.eventHandler] Error on action "${actionName}"`, err);
+    };
     let token = 0;
     if (target) {
       token = (this.#latest.get(target) ?? 0) + 1;
@@ -902,6 +914,8 @@ var AviFlowActions = class {
    * Sends an HTTP request built from the element's data attributes and returns the parsed response
    * (JSON object, or HTML string when the response is `text/html`).
    *
+   * - For `<form>` elements, the native `method` and `action` attributes are used when
+   *   `data-method` and `data-url` are not set (the `data-*` attributes take priority).
    * - GET/HEAD: params go in the query string.
    * - POST/PUT: params are sent as FormData.
    * - Other methods: params are sent as a JSON body.
@@ -910,7 +924,9 @@ var AviFlowActions = class {
    * `hook(payload, element, event, targetSelector, flow)`:
    * - `onSucces`: JSON response with a truthy `success`   (payload = data)
    * - `onFail`:   JSON response with a falsy `success`    (payload = data)
-   * - `onError`:  any thrown error, which is then re-thrown (payload = error)
+   *
+   * Errors are not handled here: they are thrown to the caller. When run by a flow, the engine
+   * passes them to the element's `data-on-error` hook (or logs them).
    *
    * The element's pending state is on while the request runs.
    *
@@ -924,13 +940,17 @@ var AviFlowActions = class {
     if (!element) return null;
     const dataset = AviElement.getDataset(element);
     const callHook = (name, payload) => {
+      if (!name) return;
       const resolved = flow?.resolveAction(name);
       resolved?.fn.call(resolved.owner, payload, element, event, targetSelector, flow);
     };
+    const isForm = element.tagName === "FORM";
+    const formMethod = isForm ? element.getAttribute("method") : null;
+    const formAction = isForm ? element.getAttribute("action") : null;
     const { method, params, url: baseUrl } = {
-      method: (dataset.method || "POST").toUpperCase(),
+      method: (dataset.method || formMethod || "POST").toUpperCase(),
       params: AviElement.getParams(element),
-      url: dataset.url || (element.tagName === "A" ? element.getAttribute("href") : null) || "/",
+      url: dataset.url || formAction || (element.tagName === "A" ? element.getAttribute("href") : null) || "/",
       ...AviElement.getParams(element, "opt")
     };
     const headers = new Headers({ "X-Requested-With": "XMLHttpRequest" });
@@ -949,60 +969,53 @@ var AviFlowActions = class {
     AviElement.togglePendingState(element, true);
     try {
       const response = await fetch(url, { body, headers, method });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status} ${response.statusText}`.trim());
+      }
       const isHtml = (response.headers.get("content-type") || "").includes("text/html");
       const data = isHtml ? await response.text() : await response.json();
       if (data && typeof data === "object") {
-        callHook(data.success ? dataset.onSucces : dataset.onFail, data);
+        callHook(data.success ? dataset.onSuccess : dataset.onFail, data);
       }
       return data;
-    } catch (err) {
-      callHook(dataset.onError, err);
-      throw err;
     } finally {
       AviElement.togglePendingState(element, false);
     }
   }
-};
-
-// src/tools/AviText.js
-var AviText = class {
   /**
-   * Converts a string to `` camelCase `` format. If the input is not a string, it returns an empty string.
+   * Reads the current value of the element that triggered the flow. Registered by default
+   * as the `value` action.
    *
-   * @param {string|*} ``text`` The input string to process.
-   * @param {boolean} [firstLetterLower=true] Determines if the initial character should be lowercase.
-   * @returns {string} The formatted string.
-   */
-  static toCamelCase(text, firstLetterLower = true) {
-    if (typeof text !== "string") {
-      return "";
-    }
-    let result = text.trim().replace(/^[-_\s]+/, "").replace(/[-_\s]+(.)?/g, (_, letter) => letter ? letter.toUpperCase() : "");
-    if (result.length === 0) return "";
-    if (firstLetterLower) {
-      return result.charAt(0).toLowerCase() + result.slice(1);
-    } else {
-      return this.toCapitalize(result);
-    }
-  }
-  /**
-   * Capitalizes the first letter of the input string. If the input is not a string, it returns an empty string.
+   * Resolution order:
+   * 1. `<input type="checkbox">`: returns the boolean `checked` state (`true` / `false`).
+   * 2. Any element whose `value` property is a string (`<input>`, `<textarea>`, `<select>`,
+   *    `<button>`, `<option>`, radio inputs...): returns that value. An empty control
+   *    returns `""` (it has a value, it is just empty).
+   * 3. Otherwise the element's `innerText` (e.g. `<div>`, `<span>`, `<p>`).
+   * 4. `null` when there is no element or nothing readable.
    *
-   * @param {string|*} ``text`` The input string.
-   * @returns {string} The string with the first letter capitalized.
-   */
-  static toCapitalize(text) {
-    const trimText = text.trim().replace(/^[-_\s]+/, "");
-    return trimText.charAt(0).toUpperCase() + trimText.slice(1);
-  }
-  /**
-   * Converts a string to `` PascalCase `` format (capitalizes the first letter and subsequent words). If the input is not a string, it returns an empty string.
+   * Elements whose `value` property is not a string (e.g. `<li>`, `<meter>`, which expose a
+   * number) are treated as having no value and fall through to `innerText`.
    *
-   * @param {string|*} ``text`` The input string to process.
-   * @returns {string} The formatted string.
+   * The action is synchronous and has no side effects. The `event`, `targetSelector` and
+   * `flow` arguments are accepted for signature compatibility with other actions, but unused.
+   *
+   * @example
+   * data-flow="input -> value -> #preview"      // input text goes to #preview
+   * data-flow="change -> value -> #agree-state" // checkbox: true / false
+   *
+   * @param {HTMLElement} element The element that triggered the flow.
+   * @param {Event} [event] The DOM event that triggered the flow (unused).
+   * @param {string} [targetSelector] The target CSS selector of the flow (unused).
+   * @param {AviFlow} [flow] The AviFlow instance (unused).
+   * @returns {string|boolean|null} The checked state for checkboxes, the value for value-bearing
+   *          elements, the innerText for others, or null when there is nothing to read.
    */
-  static toPascalCase(text) {
-    return this.toCamelCase(text, false);
+  static elementValue(element, event, targetSelector, flow) {
+    if (!element) return null;
+    if (element.tagName === "INPUT" && element.type === "checkbox") return element.checked;
+    if (typeof element.value === "string") return element.value;
+    return typeof element.innerText === "string" ? element.innerText : null;
   }
 };
 
@@ -1011,12 +1024,20 @@ var UNSAFE_KEYS = /* @__PURE__ */ new Set(["__proto__", "prototype", "constructo
 var AviFlow = class {
   #core = new AviFlowCoreEngine(this);
   tools = {
-    element: AviElement,
-    text: AviText
+    element: AviElement
+    //     text: AviText
   };
+  /**
+   * @param {Object<string, Function|Object>} [actions] Extra actions, merged over the built-in
+   *        ones (`fetch`, `value`). Values may be functions or nested objects of functions.
+   * @param {Object} [options]
+   * @param {boolean} [options.autoInit=true] Bind all `data-flow` elements on construction.
+   * @param {Document|HTMLElement|string|null} [options.root=document] Default root for `init()`.
+   */
   constructor(actions = {}, options = {}) {
     this.action = {
       fetch: AviFlowActions.fetchData,
+      value: AviFlowActions.elementValue,
       ...actions
     };
     this.option = {

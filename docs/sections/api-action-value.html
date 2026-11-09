@@ -1,0 +1,35 @@
+<h2>AviFlow.action</h2>
+<h3 id="elementValue">AviFlow.action.value(element, event?, targetSelector?, flow?)</h3>
+<span class="sig">AviFlow.action.value(element: HTMLElement, event?: HTMLEvent | null, targetSelector?: string, flow?: AviFlow instance) → string | boolean | null</span>
+<p>Registered by default as <code>AviFlow.action.value</code> (implemented by <code>AviFlowActions.elementValue</code>). Reads the current value of the element that triggered the flow. Synchronous, no side effects. Returns <code>null</code> if <code>element</code> is falsy or nothing can be read.</p>
+<h4>Value resolution</h4>
+<table>
+<tr><th>Element</th><th>Returns</th></tr>
+<tr><td><code>&lt;input type="checkbox"&gt;</code></td><td><code>true</code> if checked, <code>false</code> otherwise (<code>boolean</code>, the <code>value</code> attribute is ignored).</td></tr>
+<tr><td>Any element whose <code>value</code> property is a string (<code>&lt;input&gt;</code>, <code>&lt;textarea&gt;</code>, <code>&lt;select&gt;</code>, <code>&lt;button&gt;</code>, radio inputs...)</td><td>The <code>value</code> (string). An empty control returns <code>""</code>, not <code>null</code>.</td></tr>
+<tr><td>Any other element (<code>&lt;div&gt;</code>, <code>&lt;span&gt;</code>, <code>&lt;p&gt;</code>...)</td><td>Its <code>innerText</code> (string).</td></tr>
+<tr><td>No element, or no readable value / <code>innerText</code></td><td><code>null</code>.</td></tr>
+</table>
+<p>Resolution stops at the first match, in the order shown above.</p>
+<h4>Arguments</h4>
+<table>
+<tr><th>Argument</th><th>Use</th></tr>
+<tr><td><code>element</code></td><td>The element that triggered the flow. The only argument used.</td></tr>
+<tr><td><code>event</code>, <code>targetSelector</code>, <code>flow</code></td><td>Accepted for compatibility with the standard action signature, but ignored.</td></tr>
+</table>
+<h4>Examples</h4>
+<table>
+<tr><th>Flow</th><th>Result</th></tr>
+<tr><td><code>data-flow="input -&gt; value -&gt; #preview"</code></td><td>On every input event, the field's text is sent to <code>#preview</code>.</td></tr>
+<tr><td><code>data-flow="change -&gt; value -&gt; #state"</code></td><td>On a checkbox, <code>true</code> or <code>false</code> is sent to <code>#state</code>.</td></tr>
+<tr><td><code>data-flow="click -&gt; value -&gt; #out"</code></td><td>On a <code>&lt;div&gt;</code>, its <code>innerText</code> is sent to <code>#out</code>.</td></tr>
+<tr><td><code>data-flow="change -&gt; value -|"</code></td><td>Reads the value but updates no target (useful with a custom wrapper action).</td></tr>
+</table>
+<h4>Notes</h4>
+<ul>
+<li>Radio inputs return their <code>value</code>, not their checked state. Only checkboxes return a boolean.</li>
+<li>Elements whose <code>value</code> property is not a string (e.g. <code>&lt;li&gt;</code>, <code>&lt;meter&gt;</code>, which expose a number) fall back to <code>innerText</code>.</li>
+<li>A <code>&lt;button&gt;</code> without a <code>value</code> attribute has an empty string value and therefore returns <code>""</code>, not its label.</li>
+<li><code>&lt;select multiple&gt;</code> returns the value of the first selected option only.</li>
+<li>Can be overridden by passing your own <code>value</code> action to the <code>AviFlow</code> constructor.</li>
+</ul>

@@ -41,7 +41,13 @@ const { AviFlowActions } = await import('../src/AviFlowActions.js');
 const fetchData = AviFlowActions.fetchData;
 
 // Builds a fake fetch Response.
-const makeResponse = ({ contentType = 'application/json', json = {}, text = '', jsonError = null } = {}) => ({
+const makeResponse = ({
+  contentType = 'application/json', json = {}, text = '', jsonError = null,
+  ok = true, status = 200, statusText = 'OK'
+} = {}) => ({
+  ok,
+  status,
+  statusText,
   headers: {
     get: jest.fn((name) => (String(name).toLowerCase() === 'content-type' ? contentType : null))
   },
@@ -252,6 +258,160 @@ describe('AviFlowActions / fetchData', () => {
       await fetchData(element);
 
       expect(fetchCall()[0]).toBe('/');
+    });
+
+  });
+
+
+  // -------------------------------------------------------------------------
+  // <form> elements: native `method` / `action` attributes
+  // -------------------------------------------------------------------------
+  describe('form element', () => {
+
+    // Builds a <form> from an attribute string and returns it.
+    const makeForm = (attrs = '') => {
+      document.body.innerHTML = `<form id="frm" ${attrs}><input name="q"></form>`;
+      return document.getElementById('frm');
+    };
+
+
+    test('should use the "method" attribute when data-method is missing', async () => {
+      await fetchData(makeForm('method="put"'));
+
+      expect(fetchCall()[1].method).toBe('PUT');
+    });
+
+
+    test('should use the "action" attribute when data-url is missing', async () => {
+      await fetchData(makeForm('action="/submit"'));
+
+      expect(fetchCall()[0]).toBe('/submit');
+    });
+
+
+    test('should use both "method" and "action" attributes together', async () => {
+      setup({ params: { a: 1 } });
+
+      await fetchData(makeForm('method="get" action="/search"'));
+
+      expect(fetchCall()[0]).toBe('/search?a=1');
+      expect(fetchCall()[1].method).toBe('GET');
+      expect(fetchCall()[1].body).toBeUndefined();
+    });
+
+
+    test.each(['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'PATCH'])('should use %s from the "method" attribute', async (method) => {
+      await fetchData(makeForm(`method="${method}"`));
+
+      expect(fetchCall()[1].method).toBe(method);
+    });
+
+
+    test('should upper-case the "method" attribute', async () => {
+      await fetchData(makeForm('method="get"'));
+
+      expect(fetchCall()[1].method).toBe('GET');
+    });
+
+
+    test('should prefer data-method over the "method" attribute', async () => {
+      setup({ dataset: { method: 'delete' } });
+
+      await fetchData(makeForm('method="get"'));
+
+      expect(fetchCall()[1].method).toBe('DELETE');
+    });
+
+
+    test('should prefer data-url over the "action" attribute', async () => {
+      setup({ dataset: { url: '/from-dataset' } });
+
+      await fetchData(makeForm('action="/from-action"'));
+
+      expect(fetchCall()[0]).toBe('/from-dataset');
+    });
+
+
+    test('should mix data-method with the "action" attribute and vice versa', async () => {
+      setup({ dataset: { method: 'put' } });
+      await fetchData(makeForm('method="get" action="/from-action"'));
+
+      expect(fetchCall()[0]).toBe('/from-action');
+      expect(fetchCall()[1].method).toBe('PUT');
+
+      global.fetch.mockClear();
+      setup({ dataset: { url: '/from-dataset' } });
+      await fetchData(makeForm('method="get" action="/from-action"'));
+
+      expect(fetchCall()[0]).toBe('/from-dataset');
+      expect(fetchCall()[1].method).toBe('GET');
+    });
+
+
+    test('should default to POST and "/" when the form has neither attribute (not the browser GET / current URL)', async () => {
+      await fetchData(makeForm());
+
+      expect(fetchCall()[0]).toBe('/');
+      expect(fetchCall()[1].method).toBe('POST');
+    });
+
+
+    test('should fall back to the defaults for empty "method" and "action" attributes', async () => {
+      await fetchData(makeForm('method="" action=""'));
+
+      expect(fetchCall()[0]).toBe('/');
+      expect(fetchCall()[1].method).toBe('POST');
+    });
+
+
+    test('should send params as FormData for a form without method (default POST)', async () => {
+      setup({ params: { name: 'Avi' } });
+
+      await fetchData(makeForm('action="/save"'));
+
+      const body = fetchCall()[1].body;
+      expect(body).toBeInstanceOf(FormData);
+      expect(Object.fromEntries(body.entries())).toEqual({ name: 'Avi' });
+    });
+
+
+    test('should append params to the "action" url with "&" when it has a query string', async () => {
+      setup({ params: { a: 1 } });
+
+      await fetchData(makeForm('method="get" action="/items?page=2"'));
+
+      expect(fetchCall()[0]).toBe('/items?page=2&a=1');
+    });
+
+
+    test('should let "opt" params override the "method" and "action" attributes', async () => {
+      setup({ opts: { method: 'PATCH', url: '/from-opt' } });
+
+      await fetchData(makeForm('method="get" action="/from-action"'));
+
+      expect(fetchCall()[0]).toBe('/from-opt');
+      expect(fetchCall()[1].method).toBe('PATCH');
+    });
+
+
+    test('should ignore "method" and "action" attributes on non-<form> elements', async () => {
+      element.setAttribute('method', 'get');
+      element.setAttribute('action', '/ignored');
+
+      await fetchData(element);
+
+      expect(fetchCall()[0]).toBe('/');
+      expect(fetchCall()[1].method).toBe('POST');
+    });
+
+
+    test('should ignore "method" and "action" attributes on an <a> element and keep using its href', async () => {
+      document.body.innerHTML = '<a id="link" href="/from-href" method="get" action="/ignored">Link</a>';
+
+      await fetchData(document.getElementById('link'));
+
+      expect(fetchCall()[0]).toBe('/from-href');
+      expect(fetchCall()[1].method).toBe('POST');
     });
 
   });
@@ -494,29 +654,118 @@ describe('AviFlowActions / fetchData', () => {
       await expect(fetchData(element)).resolves.toEqual({ a: 1 });
     });
 
+  });
 
-    test('should resolve even when the HTTP status is not ok (status is not checked)', async () => {
-      const response = { ...makeResponse({ json: { error: 'boom' } }), ok: false, status: 500 };
+
+  // -------------------------------------------------------------------------
+  // HTTP status: a response that is not ok is an error
+  // -------------------------------------------------------------------------
+  describe('HTTP status', () => {
+
+    test.each([
+      [400, 'Bad Request'],
+      [401, 'Unauthorized'],
+      [404, 'Not Found'],
+      [500, 'Internal Server Error'],
+      [503, 'Service Unavailable'],
+    ])('should reject with "HTTP %i %s" when the response is not ok', async (status, statusText) => {
+      global.fetch.mockResolvedValue(makeResponse({ ok: false, status, statusText }));
+
+      const promise = fetchData(element);
+
+      await expect(promise).rejects.toBeInstanceOf(Error);
+      await expect(promise).rejects.toThrow(`HTTP ${status} ${statusText}`);
+    });
+
+
+    test.each(['', '   '])('should not leave a trailing space in the message when statusText is %j (HTTP/2)', async (statusText) => {
+      const response = { ...makeResponse({ ok: false, status: 404 }), statusText };
       global.fetch.mockResolvedValue(response);
 
-      await expect(fetchData(element)).resolves.toEqual({ error: 'boom' });
+      const error = await fetchData(element).catch((err) => err);
+
+      expect(error).toBeInstanceOf(Error);
+      expect(error.message.startsWith('HTTP 404')).toBe(true);
+      expect(error.message).toBe(error.message.trim());
+    });
+
+
+    test('should give exactly "HTTP 404" when statusText is empty', async () => {
+      global.fetch.mockResolvedValue(makeResponse({ ok: false, status: 404, statusText: '' }));
+
+      await expect(fetchData(element)).rejects.toThrow(/^HTTP 404$/);
+    });
+
+
+    test('should not read the body of a response that is not ok', async () => {
+      const response = makeResponse({ ok: false, status: 404, statusText: 'Not Found', json: { a: 1 }, text: '<p>404</p>' });
+      global.fetch.mockResolvedValue(response);
+
+      await expect(fetchData(element)).rejects.toThrow('HTTP 404 Not Found');
+
+      expect(response.headers.get).not.toHaveBeenCalled();
+      expect(response.json).not.toHaveBeenCalled();
+      expect(response.text).not.toHaveBeenCalled();
+    });
+
+
+    test('should not return an HTML error page as data', async () => {
+      global.fetch.mockResolvedValue(
+        makeResponse({ ok: false, status: 404, statusText: 'Not Found', contentType: 'text/html', text: '<h1>404</h1>' })
+      );
+
+      await expect(fetchData(element)).rejects.toThrow('HTTP 404 Not Found');
+    });
+
+
+    test('should not call the success or fail hooks when the response is not ok', async () => {
+      global.fetch.mockResolvedValue(
+        makeResponse({ ok: false, status: 422, statusText: 'Unprocessable Entity', json: { success: false } })
+      );
+      const done = jest.fn();
+      const fail = jest.fn();
+      const flow = makeFlow({ done, fail });
+      setup({ dataset: { onSuccess: 'done', onFail: 'fail' } });
+
+      await expect(fetchData(element, null, '#t', flow)).rejects.toThrow('HTTP 422 Unprocessable Entity');
+
+      expect(done).not.toHaveBeenCalled();
+      expect(fail).not.toHaveBeenCalled();
+      expect(flow.resolveAction).not.toHaveBeenCalled();
+    });
+
+
+    test('should clear the pending state when the response is not ok', async () => {
+      global.fetch.mockResolvedValue(makeResponse({ ok: false, status: 500, statusText: 'Internal Server Error' }));
+
+      await expect(fetchData(element)).rejects.toThrow('HTTP 500');
+
+      expect(AviElement.togglePendingState).toHaveBeenNthCalledWith(1, element, true);
+      expect(AviElement.togglePendingState).toHaveBeenLastCalledWith(element, false);
+    });
+
+
+    test.each([200, 201, 204, 299])('should resolve normally for the ok status %i', async (status) => {
+      global.fetch.mockResolvedValue(makeResponse({ ok: true, status, json: { done: true } }));
+
+      await expect(fetchData(element)).resolves.toEqual({ done: true });
     });
 
   });
 
 
   // -------------------------------------------------------------------------
-  // Hooks: onSucces / onFail
+  // Hooks: onSuccess / onFail
   // -------------------------------------------------------------------------
   describe('success and fail hooks', () => {
 
-    test('should call the onSucces hook with (data, element, event, target, flow)', async () => {
+    test('should call the onSuccess hook with (data, element, event, target, flow)', async () => {
       const data = { success: true, id: 1 };
       global.fetch.mockResolvedValue(makeResponse({ json: data }));
       const onDone = jest.fn();
       const flow = makeFlow({ done: onDone });
       const event = new Event('click');
-      setup({ dataset: { onSucces: 'done' } });
+      setup({ dataset: { onSuccess: 'done' } });
 
       await fetchData(element, event, '#target', flow);
 
@@ -526,12 +775,12 @@ describe('AviFlowActions / fetchData', () => {
     });
 
 
-    test('should call the onSucces hook with its owner as "this"', async () => {
+    test('should call the onSuccess hook with its owner as "this"', async () => {
       global.fetch.mockResolvedValue(makeResponse({ json: { success: true } }));
       const owner = { name: 'owner' };
       let receivedThis;
       const flow = makeFlow({ done() { receivedThis = this; } }, owner);
-      setup({ dataset: { onSucces: 'done' } });
+      setup({ dataset: { onSuccess: 'done' } });
 
       await fetchData(element, null, '#t', flow);
 
@@ -544,7 +793,7 @@ describe('AviFlowActions / fetchData', () => {
       const onDone = jest.fn();
       const onFail = jest.fn();
       const flow = makeFlow({ done: onDone, fail: onFail });
-      setup({ dataset: { onSucces: 'done', onFail: 'fail' } });
+      setup({ dataset: { onSuccess: 'done', onFail: 'fail' } });
 
       await fetchData(element, null, '#t', flow);
 
@@ -560,7 +809,7 @@ describe('AviFlowActions / fetchData', () => {
       const onFail = jest.fn();
       const flow = makeFlow({ done: onDone, fail: onFail });
       const event = new Event('click');
-      setup({ dataset: { onSucces: 'done', onFail: 'fail' } });
+      setup({ dataset: { onSuccess: 'done', onFail: 'fail' } });
 
       await fetchData(element, event, '#target', flow);
 
@@ -599,7 +848,7 @@ describe('AviFlowActions / fetchData', () => {
       const data = { success: true, value: 42 };
       global.fetch.mockResolvedValue(makeResponse({ json: data }));
       const flow = makeFlow({ done: jest.fn() });
-      setup({ dataset: { onSucces: 'done' } });
+      setup({ dataset: { onSuccess: 'done' } });
 
       await expect(fetchData(element, null, '#t', flow)).resolves.toBe(data);
     });
@@ -608,7 +857,7 @@ describe('AviFlowActions / fetchData', () => {
     test('should not call any hook when the response is HTML (string)', async () => {
       global.fetch.mockResolvedValue(makeResponse({ contentType: 'text/html', text: '<p>ok</p>' }));
       const flow = makeFlow({ done: jest.fn(), fail: jest.fn() });
-      setup({ dataset: { onSucces: 'done', onFail: 'fail' } });
+      setup({ dataset: { onSuccess: 'done', onFail: 'fail' } });
 
       await expect(fetchData(element, null, '#t', flow)).resolves.toBe('<p>ok</p>');
       expect(flow.resolveAction).not.toHaveBeenCalled();
@@ -618,7 +867,7 @@ describe('AviFlowActions / fetchData', () => {
     test('should not call any hook when the JSON response is null', async () => {
       global.fetch.mockResolvedValue(makeResponse({ json: null }));
       const flow = makeFlow();
-      setup({ dataset: { onSucces: 'done', onFail: 'fail' } });
+      setup({ dataset: { onSuccess: 'done', onFail: 'fail' } });
 
       await expect(fetchData(element, null, '#t', flow)).resolves.toBeNull();
       expect(flow.resolveAction).not.toHaveBeenCalled();
@@ -629,7 +878,7 @@ describe('AviFlowActions / fetchData', () => {
       const data = { success: true };
       global.fetch.mockResolvedValue(makeResponse({ json: data }));
       const flow = makeFlow();
-      setup({ dataset: { onSucces: 'unknown' } });
+      setup({ dataset: { onSuccess: 'unknown' } });
 
       await expect(fetchData(element, null, '#t', flow)).resolves.toBe(data);
       expect(flow.resolveAction).toHaveBeenCalledWith('unknown');
@@ -648,22 +897,22 @@ describe('AviFlowActions / fetchData', () => {
     test('should resolve normally when no flow is provided', async () => {
       const data = { success: true };
       global.fetch.mockResolvedValue(makeResponse({ json: data }));
-      setup({ dataset: { onSucces: 'done', onFail: 'fail' } });
+      setup({ dataset: { onSuccess: 'done', onFail: 'fail' } });
 
       await expect(fetchData(element)).resolves.toBe(data);
     });
 
 
-    test('should reject when a hook throws, calling onError and clearing pending state', async () => {
+    test('should reject when a hook throws and clear the pending state (onError is left to the engine)', async () => {
       global.fetch.mockResolvedValue(makeResponse({ json: { success: true } }));
       const error = new Error('hook failed');
       const onError = jest.fn();
       const flow = makeFlow({ done: () => { throw error; }, err: onError });
-      setup({ dataset: { onSucces: 'done', onError: 'err' } });
+      setup({ dataset: { onSuccess: 'done', onError: 'err' } });
 
       await expect(fetchData(element, null, '#t', flow)).rejects.toBe(error);
 
-      expect(onError).toHaveBeenCalledWith(error, element, null, '#t', flow);
+      expect(onError).not.toHaveBeenCalled();
       expect(AviElement.togglePendingState).toHaveBeenLastCalledWith(element, false);
     });
 
@@ -671,7 +920,8 @@ describe('AviFlowActions / fetchData', () => {
 
 
   // -------------------------------------------------------------------------
-  // Errors and the onError hook
+  // Errors: propagated to the caller. The `data-on-error` hook is handled by
+  // AviFlowCoreEngine.eventHandler, not by fetchData.
   // -------------------------------------------------------------------------
   describe('errors', () => {
 
@@ -693,7 +943,7 @@ describe('AviFlowActions / fetchData', () => {
 
     test('should reject when reading the response headers fails', async () => {
       const error = new Error('bad headers');
-      global.fetch.mockResolvedValue({ headers: { get: () => { throw error; } } });
+      global.fetch.mockResolvedValue({ ok: true, headers: { get: () => { throw error; } } });
 
       await expect(fetchData(element)).rejects.toBe(error);
     });
@@ -708,52 +958,27 @@ describe('AviFlowActions / fetchData', () => {
     });
 
 
-    test('should call the onError hook with (error, element, event, target, flow)', async () => {
+    test('should reject with the original error and NOT call the onError hook (the engine does)', async () => {
       const error = new Error('network');
       global.fetch.mockRejectedValue(error);
       const onError = jest.fn();
       const flow = makeFlow({ err: onError });
-      const event = new Event('click');
       setup({ dataset: { onError: 'err' } });
 
-      await expect(fetchData(element, event, '#target', flow)).rejects.toBe(error);
+      await expect(fetchData(element, new Event('click'), '#target', flow)).rejects.toBe(error);
 
-      expect(flow.resolveAction).toHaveBeenCalledWith('err');
-      expect(onError).toHaveBeenCalledTimes(1);
-      expect(onError).toHaveBeenCalledWith(error, element, event, '#target', flow);
+      expect(flow.resolveAction).not.toHaveBeenCalled();
+      expect(onError).not.toHaveBeenCalled();
     });
 
 
-    test('should call the onError hook with its owner as "this"', async () => {
+    test('should clear the pending state after an error', async () => {
       global.fetch.mockRejectedValue(new Error('network'));
-      const owner = { name: 'owner' };
-      let receivedThis;
-      const flow = makeFlow({ err() { receivedThis = this; } }, owner);
-      setup({ dataset: { onError: 'err' } });
 
-      await expect(fetchData(element, null, '#t', flow)).rejects.toThrow('network');
+      await expect(fetchData(element)).rejects.toThrow('network');
 
-      expect(receivedThis).toBe(owner);
-    });
-
-
-    test('should still reject with the original error after the onError hook ran', async () => {
-      const error = new Error('network');
-      global.fetch.mockRejectedValue(error);
-      const flow = makeFlow({ err: jest.fn() });
-      setup({ dataset: { onError: 'err' } });
-
-      await expect(fetchData(element, null, '#t', flow)).rejects.toBe(error);
-    });
-
-
-    test('should reject with the original error when the onError action is not found', async () => {
-      const error = new Error('network');
-      global.fetch.mockRejectedValue(error);
-      const flow = makeFlow();
-      setup({ dataset: { onError: 'unknown' } });
-
-      await expect(fetchData(element, null, '#t', flow)).rejects.toBe(error);
+      expect(AviElement.togglePendingState).toHaveBeenNthCalledWith(1, element, true);
+      expect(AviElement.togglePendingState).toHaveBeenLastCalledWith(element, false);
     });
 
 

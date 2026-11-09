@@ -1,0 +1,32 @@
+<!-- Case 15: Fetch from anchor -->
+<h2>Example: Fetch using anchor href as data-url</h2>
+<h3 class="code">[Event] -> fetch -> [Target]</h3>
+<span class="sig">data-flow="fetch -> #output-15"</span>
+
+<div class="example">
+  <p class"info"><code>data-flow="fetch -> #output-15"</code> is an abreviation for <code>data-flow="click -> fetch -> #output-15"</code></p>
+
+
+  <pre><code>&lt;a 
+  href='data:application/json;charset=utf-8,"It works!"' 
+  data-flow=".prevent.stop -&gt; fetch -&gt; #output-15" 
+  data-method="get"&gt;Local Link&lt;/a&gt;
+&lt;a
+  href="https://jsonplaceholder.typicode.com/users/1"
+  data-flow=".prevent.stop -&gt; fetch -&gt; #output-15"
+  data-method="get"
+&gt;Load User Info&lt;/button&gt;
+&lt;div id="output-15"&lt;&gt;/div&lt;
+&lt;script&gt;
+  const flow = new AviFlow();
+&lt;/script&gt;</code></pre>
+
+
+  <div class="form">
+    <a href='data:application/json;charset=utf-8,"It works!"' data-flow=".prevent.stop -> fetch -> #output-15" data-method="get">Local Link</a>
+    <a href='https://jsonplaceholder.typicode.com/users/1' data-flow=".prevent.stop -> fetch -> #output-15" data-method="get">Load User Info</a>
+  </div>
+
+  <div id="output-15" class="output"><em>Output will appear here...</em></div>
+
+</div>

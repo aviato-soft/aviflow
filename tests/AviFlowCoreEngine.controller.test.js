@@ -462,6 +462,111 @@ describe('AviFlowCoreEngine / eventHandler', () => {
     expect(initSpy).not.toHaveBeenCalled();
   });
 
+  describe('data-on-error hook', () => {
+    const hookOwner = { name: 'hookOwner' };
+    let hookFn;
+    let actionFn;
+
+    /** resolveAction: "act" -> actionFn, "hook" -> hookFn, anything else is not defined. */
+    const stubActionAndHook = () =>
+      jest.spyOn(flow, 'resolveAction').mockImplementation((name) => {
+        if (name === 'act') return { fn: actionFn, owner: {} };
+        if (name === 'hook') return { fn: hookFn, owner: hookOwner };
+        return undefined;
+      });
+
+    beforeEach(() => {
+      hookFn = jest.fn();
+      actionFn = jest.fn();
+      triggerEl.dataset.onError = 'hook'; // <button data-on-error="hook">
+    });
+
+    test('should call the hook with (error, element, event, target, flow) and not log a sync error', () => {
+      const error = new Error('sync failure');
+      actionFn.mockImplementation(() => { throw error; });
+      stubActionAndHook();
+
+      const result = flowEngine.eventHandler(triggerEl, event, 'act', '#target');
+
+      expect(result).toBeUndefined();
+      expect(hookFn).toHaveBeenCalledTimes(1);
+      expect(hookFn).toHaveBeenCalledWith(error, triggerEl, event, '#target', flow);
+      expect(hookFn.mock.contexts[0]).toBe(hookOwner);
+      expect(errorSpy).not.toHaveBeenCalled();
+      expect(initSpy).not.toHaveBeenCalled();
+    });
+
+    test('should call the hook and not log a rejected async action', async () => {
+      const error = new Error('async failure');
+      actionFn.mockImplementation(() => Promise.reject(error));
+      stubActionAndHook();
+
+      await expect(flowEngine.eventHandler(triggerEl, event, 'act', '#target')).resolves.toBeUndefined();
+
+      expect(hookFn).toHaveBeenCalledWith(error, triggerEl, event, '#target', flow);
+      expect(errorSpy).not.toHaveBeenCalled();
+      expect(targetEl.innerHTML).toBe(''); // the failed result is not applied
+    });
+
+    test('should not call the hook when the action succeeds', () => {
+      actionFn.mockReturnValue('Fine');
+      stubActionAndHook();
+
+      expect(flowEngine.eventHandler(triggerEl, event, 'act', '#target')).toBe('Fine');
+
+      expect(hookFn).not.toHaveBeenCalled();
+      expect(errorSpy).not.toHaveBeenCalled();
+    });
+
+    test('should log the original error when the hook name is not defined', () => {
+      const error = new Error('sync failure');
+      actionFn.mockImplementation(() => { throw error; });
+      triggerEl.dataset.onError = 'doesNotExist';
+      stubActionAndHook();
+
+      flowEngine.eventHandler(triggerEl, event, 'act', '#target');
+
+      expect(hookFn).not.toHaveBeenCalled();
+      expect(errorSpy).toHaveBeenCalledTimes(1);
+      expect(errorSpy).toHaveBeenCalledWith('[AviFlow.core.eventHandler] Error on action "act"', error);
+    });
+
+    test('should log both errors when the hook itself throws', () => {
+      const error = new Error('sync failure');
+      const hookError = new Error('hook failure');
+      actionFn.mockImplementation(() => { throw error; });
+      hookFn.mockImplementation(() => { throw hookError; });
+      stubActionAndHook();
+
+      expect(() => flowEngine.eventHandler(triggerEl, event, 'act', '#target')).not.toThrow();
+
+      expect(errorSpy).toHaveBeenCalledTimes(2);
+      expect(errorSpy).toHaveBeenNthCalledWith(1, '[AviFlow.core.eventHandler] Error hook "hook" failed', hookError);
+      expect(errorSpy).toHaveBeenNthCalledWith(2, '[AviFlow.core.eventHandler] Error on action "act"', error);
+    });
+
+    test('should not leak an unhandled rejection when the hook throws on an async error', async () => {
+      actionFn.mockImplementation(() => Promise.reject(new Error('async failure')));
+      hookFn.mockImplementation(() => { throw new Error('hook failure'); });
+      stubActionAndHook();
+
+      await expect(flowEngine.eventHandler(triggerEl, event, 'act', '#target')).resolves.toBeUndefined();
+      expect(errorSpy).toHaveBeenCalledTimes(2);
+    });
+
+    test('should log the error when the element has no data-on-error', () => {
+      const error = new Error('sync failure');
+      actionFn.mockImplementation(() => { throw error; });
+      delete triggerEl.dataset.onError;
+      stubActionAndHook();
+
+      flowEngine.eventHandler(triggerEl, event, 'act', '#target');
+
+      expect(hookFn).not.toHaveBeenCalled();
+      expect(errorSpy).toHaveBeenCalledWith('[AviFlow.core.eventHandler] Error on action "act"', error);
+    });
+  });
+
   test('should log an error (and still return the content) when applying the result fails', () => {
     const error = new Error('init failed');
     initSpy.mockImplementation(() => { throw error; });

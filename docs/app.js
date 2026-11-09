@@ -58,6 +58,10 @@ app.data = {
       page: 'api-action-fetch'
     },
     {
+      label: 'value',
+      page: 'api-action-value'
+    },
+    {
       label: 'AviFlow.tools.element',
       page: 'group'
     },
@@ -96,7 +100,7 @@ app.data = {
     {
       label: 'togglePendingState',
       page: 'api-tools-element-togglePendingState'
-    },
+    },/*
     {
       label: 'AviFlow.tools.text',
       page: 'group'
@@ -112,7 +116,7 @@ app.data = {
     {
       label: 'toPascalCase',
       page: 'api-tools-text-toPascalCase'
-    },
+    },*/
     {
       label: 'Examples',
     },
@@ -150,41 +154,46 @@ app.data = {
       page: 'example-12_action_fetch_local'
     },
     {
-      label: 'Handling Fetch Error',
-      page: 'example-13_action_fetch_error'
-    },/*
-    {
-      label: 'Handling Fetch Success',
-      page: 'example-14_action_fetch_success'
-    },/*
-    {
-      label: 'Fetch using a[href]',
-      page: 'example-15_action_fetch_anchor'
+      label: 'Handling Fetch State Handler',
+      page: 'example-13_action_fetch_state'
     },
     {
       label: 'Fetch using params',
-      page: 'example-16_action_fetch_params'
+      page: 'example-14_action_fetch_params'
+    },
+    {
+      label: 'Fetch using href attribute',
+      page: 'example-15_action_fetch_anchor'
     },
     {
       label: 'Fetch using form elements',
-      page: 'example-17_action_fetch_form'
-    },*/
+      page: 'example-16_action_fetch_form'
+    },
 
     // [...] //
 
     {
       label: 'Form elements',
       page: 'example-20_form_elements'
+    },/*
+    More: examples
+    - Fetch using parent data
+    - 
+    {
+      label: "Repository Info"
     },
     {
-      label: 'Contributing'
+      label: 'Contributing',
+      page: "repository-contribute"
     },
     {
       label: 'Status',
+      page: "repository-status"
     },
     {
       label: 'License',
-    }
+      page: "repository-licence"
+    }*/
   ]
 }
 app.actions = {
@@ -353,19 +362,24 @@ app.examples = {
   },
 
   fetchCustomHandler: {
+    clear: () => {
+      return '<em>Output will appear here...</em>';
+    },
     on: {
-      error: (a,b,c,d) => {
-        console.log({test: 'custom error', a,b,c,d});
+      error: (data, element, event, targetSelector, flow) => {
+        const target = document.getElementById('output-13-error');
+        flow.tools.element.setContent(target, `The error is: ${data}` );
+        console.log({data, element, event, targetSelector, flow});
       },
-      fail: (a,b,c,d) => {
-        console.log({test: 'custom fail', a,b,c,d});
+      fail: (data, element, event, targetSelector, flow) => {
+        const target = document.getElementById('output-13-fail');
+        flow.tools.element.setContent(target, `Failure: ${data.html}`);
+        console.log({data, element, event, targetSelector, flow});
       },
       success: (data, element, event, targetSelector, flow) => {
-        const target = document.getElementById('output-12');
-        flow.tools.element.setContent(target, 'Success: ' + data.html);
-        console.log({ test: 'custom success', 
-          data, element, event, targetSelector, flow
-        });
+        const target = document.getElementById('output-13-success');
+        flow.tools.element.setContent(target, `Success: ${data.html}`);
+        console.log({data, element, event, targetSelector, flow})
       }
     }
   },

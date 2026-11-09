@@ -1,0 +1,54 @@
+<!-- Case 14: Fetch Action Parameters -->
+<h2>Example: Fetch Action Parameters</h2>
+<h3 class="code">[Event] -> fetch -> [Target]</h3>
+<span class="sig">data-flow="fetch -> #output-14"</span>
+
+<div class="example">
+  <p class"info"><code>data-flow="fetch -> #output-14"</code> is an abreviation for <code>data-flow="click -> fetch -> #output-14"</code></p>
+
+<pre><code>&lt;button
+  data-flow="fetch -&gt; #output-14"
+  data-method="post"
+  data-param-body="bar"
+  data-param-id="101"
+  data-param-title="foo"
+  data-param-user-id="1"
+  data-url="https://jsonplaceholder.typicode.com/posts"&gt;Load User Info&lt;/button&gt;
+&lt;button
+  data-flow="fetch -&gt; #output-14"
+  data-method="post"
+  data-param-body="bar"
+  data-param-id="101"
+  data-param-title="foo"
+  data-param-user-id="1"
+  data-url='data:application/json;charset=utf-8,{"success":true,"body":"bar","id":"101","title":"foo","user-id":"1"}'&gt;Post parameters [local]&lt;/button&gt;
+
+&lt;div id="output-14" class="output"&gt;&lt;em&gt;Output will appear here...&lt;/em&gt;&lt;/div&gt;
+
+&lt;script&gt;
+  const flow = new AviFlow();
+&lt;/script&gt;</code></pre>
+
+
+  <div class="form">
+    <button
+      data-flow="fetch -> #output-14"
+      data-method="post"
+      data-param-title="foo"
+      data-param-body="bar"
+      data-param-id="101"
+      data-url="https://jsonplaceholder.typicode.com/posts">Load User Info</button>      
+
+    <button
+      data-flow="fetch -> #output-14"
+      data-method="post"
+      data-param-body="bar"
+      data-param-id="101"
+      data-param-title="foo"
+      data-param-user-id="1"
+      data-url='data:application/json;charset=utf-8,{"success":true,"body":"bar","id":"101","title":"foo","user-id":"1"}'>Post parameters [local]</button>
+
+  </div>
+
+  <div class="output" id="output-14"><em>Output will appear here...</em></div>
+</div>
