@@ -1,0 +1,30 @@
+<h2>AviFlow.action</h2>
+<h3 id="fetchData">AviFlow.action.fetch(element, event?, targetSelector?, flow?)</h3>
+<span class="sig">AviFlow.action.fetch(element: HTMLElement, event?: HTMLEvent | null, targetSelector: string, flow: AviFlow instance) → Promise&lt;Object|string&gt; | null</span>
+<p>Registered by default as <code>AviFlow.action.fetch</code>. Reads configuration from the element and performs an HTTP request. Returns <code>null</code> if <code>element</code> is falsy.</p>
+<h4>Element configuration</h4>
+<table>
+<tr><th>Source</th><th>Use</th></tr>
+<tr><td><code>data-url</code></td><td>Request URL (default <code>/</code>).</td></tr>
+<tr><td><code>data-method</code></td><td>HTTP method (default <code>POST</code>, upper-cased).</td></tr>
+<tr><td><code>data-param-*</code> + form fields</td><td>Parameters, via <code>AviFlow.tools.element.getParams</code>. Inherited through <code>data-parent</code>.</td></tr>
+<tr><td><code>data-opt-pending-*</code></td><td>Pending-state options, see <a href="#togglePendingState">togglePendingState</a>.</td></tr>
+</table>
+<p><code>opt</code> is spread over the internal request options (<code>headers</code>, <code>method</code>, <code>params</code>, <code>url</code>, …), so it can override any of them.</p>
+<h4>Request behaviour</h4>
+<ul>
+<li>Always sends <code>X-Requested-With: XMLHttpRequest</code>.</li>
+<li><strong>GET / HEAD</strong>: params are appended to the URL query string.</li>
+<li><strong>POST / PUT</strong>: params are sent as <code>FormData</code>.</li>
+<li><strong>Other methods</strong>: params sent as JSON body with <code>Content-Type: application/json; charset=UTF-8</code>.</li>
+<li>The element is put in pending state during the request and restored in <code>finally</code>.</li>
+</ul>
+<h4>Response handling</h4>
+<table>
+<tr><th>Response</th><th>Promise</th></tr>
+<tr><td><code>Content-Type</code> contains <code>text/html</code></td><td>Resolves with the response text (string).</td></tr>
+<tr><td>Otherwise parsed as JSON with <code>success</code> truthy</td><td>Resolves with the parsed object.</td></tr>
+<tr><td>JSON without <code>success</code></td><td>Rejects with <code>data.error</code> or <code>"[AviFlow.action.fetch] Error fetching data"</code>.</td></tr>
+<tr><td>Network / parse error</td><td>Rejects with the original error.</td></tr>
+</table>
+<p>HTTP status codes are not checked; only the body is inspected.</p>

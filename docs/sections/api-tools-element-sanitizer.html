@@ -1,0 +1,5 @@
+<h3>AviFlow.tools.element.sanitizer</h3>
+<span class="sig">AviFlow.tools.element.sanitizer: ((html: string) =&gt; string) | null = null</span>
+<p>Optional hook applied to every HTML string inserted by <code>setContent</code> / <code>appendContent</code>.</p>
+<pre><code>AviFlow.tools.element.sanitizer = (html) =&gt; DOMPurify.sanitize(html);</code></pre>
+<div class="warn">Without a sanitizer, server HTML is inserted as-is. Set one when responses may contain untrusted markup.</div>

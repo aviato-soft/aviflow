@@ -1,0 +1,42 @@
+<h2>Custom actions</h2>
+<p>An action is any function. It is invoked as <code>action.call(owner, element, event, target, flow)</code>, where:</p>
+<ul>
+  <li><code>this</code> / <code>owner</code> is the object that contains the function (<code>flow.action</code> for top-level actions, the nested object for dotted paths)</li>
+  <li><code>element</code> is the <code>HTMLElement</code> that triggered the flow</li>
+  <li><code>event</code> is the DOM event object</li>
+  <li><code>target</code> is the target CSS selector from the flow definition</li>
+  <li><code>flow</code> is the <code>AviFlow</code> instance</li>
+</ul>
+<p>An action only needs to declare the parameters it uses, up to the last one it needs, e.g. <code>(element, event) =&gt; { … }</code>. Actions may be synchronous or asynchronous.</p>
+
+<pre><code>import AviFlow from &#x27;./AviFlow.js&#x27;;
+
+const flow = new AviFlow({
+  // Pass actions at construction time, flat…
+  greet(element) {
+    return `Hello from &lt;${element.tagName.toLowerCase()}&gt;`;
+  },
+
+  // …or nested, and call them with a dotted path: data-flow=&quot;admin.users.remove -&gt; #list&quot;
+  admin: {
+    users: {
+      async remove(element, event, target, flow) {
+        // `this` is the `admin.users` object
+      }
+    }
+  }
+});
+
+// …or assign them later.
+flow.action.save = async (element, event, target, flow) =&gt; {
+  // …
+};
+flow.action.admin.users.add = (element) =&gt; { /* … */ };</code></pre>
+
+<ul>
+  <li>If an action returns a value (or a promise), the result is delivered to the target. For async actions, only the most recent call per target is applied.</li>
+  <li>After a target is updated, <code>flow.init(target)</code> runs so any new <code>[data-flow]</code> elements inside it are bound.</li>
+  <li>An exact key in <code>flow.action</code> (even one containing dots) takes precedence over dotted-path resolution. Paths through <code>__proto__</code>, <code>prototype</code>, <code>constructor</code> and inherited <code>Object.prototype</code> members are rejected.</li>
+  <li>If an action name cannot be resolved, a warning is logged and nothing runs.</li>
+</ul>
+<p>The built-in <code>fetch</code> action is always available.</p>

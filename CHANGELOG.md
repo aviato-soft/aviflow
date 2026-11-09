@@ -7,21 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [WIP]
 ### Added
-+ Add more examples
-+ Add tutorial:
-    1. load
-    2. create fn.action
-    3. set data-event to trigger fn.action
-    4. set data-target to watch the execution
-
 ### Changed
-+ Change examples UI
+### Fixed
+### Removed
 
 
 ## [Unreleased]
+
+## [2.0.1] - 2026-11-09T19:50:28Z
+### Added
+- create docs as github pages
+- AviFlow.js - the main file
+- AviFlowActions.js - the integrated action
+- AviFlowCoreEngine.js - the core engine logic
+- tools/AviElement.js - tools to handle html elements
+- tools/AviText.js - tools to handle text format
+- media assets
+
+### Changed
+- new file structure
 - force node v.24 for github workflows
 - update github workflow actions from v4 to v7
 - use ubuntu 26.04 for  github workflow actions
+- Change examples UI
+- update jest version to 30.5.2
+
+### Removed
+- index.js
 
 
 ## [1.1.5] - 2026-10-13T16:43:21Z

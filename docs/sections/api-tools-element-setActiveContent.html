@@ -1,0 +1,12 @@
+<h3>AviFlow.tools.element.setActiveContent(element, activeName, opt)</h3>
+<span class="sig">AviFlow.tools.element.setActiveContent(element, activeName, opt = {}) -> HTMLElement | null</span>
+<p>Shows the descendants <code>[data-content="name"]</code> listed in <code>activeName</code> and hides all others (tabs, steps, views).<br>
+Hidden elements get the hidden class and <code>aria-hidden="true"</code>; shown ones lose both. Note that <em>all</em> <code>[data-content]</code> descendants are affected, including nested ones.</p>
+<table>
+<tr><th>Param</th><th>Description</th></tr>
+<tr><td><code>activeName</code></td><td>String (<code>'a'</code>), space/comma list (<code>'a b'</code>, <code>'a, b'</code>), number, or array. Empty string/array hides all. <code>null</code>/<code>undefined</code> leaves everything unchanged.</td></tr>
+<tr><td><code>opt['hidden-class']</code></td><td>Default <code>'hidden'</code>; several classes allowed; <code>false</code> = none.</td></tr>
+<tr><td><code>opt['hidden-aria']</code></td><td>Default <code>true</code>.</td></tr>
+</table>
+<p>Options can also come from <code>data-opt-*</code> attributes on the container; <code>opt</code> wins.</p>
+<div class="note">Avoid <code>aria-hidden</code> on focusable descendants: use a hidden class with <code>display:none</code>, or set <code>hidden-aria</code> to <code>false</code>.</div>

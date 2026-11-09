@@ -1,0 +1,13 @@
+<h2>Quick start</h2>
+
+<pre><code>&lt;form data-flow=&quot;submit.prevent -&gt; fetch -&gt; #result&quot; action=&quot;/api/search&quot;&gt;
+  &lt;input name=&quot;q&quot; placeholder=&quot;Search…&quot;&gt;
+  &lt;button&gt;Go&lt;/button&gt;
+&lt;/form&gt;
+&lt;div id=&quot;result&quot;&gt;&lt;/div&gt;</code></pre>
+
+<pre><code>&lt;script type=&quot;module&quot;&gt;
+  import AviFlow from './AviFlow.js';
+  
+  new AviFlow(); // scans the document and binds every [data-flow] element
+&lt;/script&gt;</code></pre>

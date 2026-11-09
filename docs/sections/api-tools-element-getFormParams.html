@@ -1,0 +1,9 @@
+<h3>AviFlow.tools.elementgetFormParams(element, useClosest)</h3>
+<span class="sig">AviFlow.tools.element.getFormParams(element, useClosest = false) -> Object&lt;string, string|File|Array&gt;</span>
+<p>
+  Reads <code>FormData</code> of a form into an object. <br>
+  Duplicate field names become arrays. <br>
+  A key named <code>__proto__</code> is skipped. </br>
+  Non-form elements return <code>{}</code> unless <code>useClosest</code> is <code>true</code>, 
+  in which case <code>element.form</code> or the closest ancestor <code>&lt;form&gt;</code> is used.
+</p>

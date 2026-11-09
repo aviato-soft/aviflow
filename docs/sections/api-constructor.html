@@ -1,0 +1,14 @@
+<h2>API Reference</h2>
+<h3>new AviFlow(actions?, options?)</h3>
+<span class="sig">new AviFlow(actions = {}, options = {}) -> AviFlow</span>
+<table>
+<tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+<tr><td><code>actions</code></td><td><code>Object</code></td><td>Map of <code>name -> function</code>, merged with the built-in actions.</td></tr>
+<tr><td><code>options</code></td><td><code>Object</code></td><td>Engine options (see below).</td></tr>
+</table>
+<p>Options</p>
+<table>
+<tr><th>Option</th><th>Default</th><th>Description</th></tr>
+<tr><td><code>autoInit</code></td><td>true</td><td>Call <code>init()</code> immediately after construction.</td></tr>
+<tr><td><code>root</code></td><td><code>document</code></td><td>Default container scanned for <code>[data-flow]</code> elements.</td></tr>
+</table>

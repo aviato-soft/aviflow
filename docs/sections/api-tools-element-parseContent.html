@@ -1,0 +1,12 @@
+<h3>AviFlow.tools.element.parseContent(content)</h3>
+<span class="sig">AviFlow.tools.element.parseContent(content) -> { kind: 'node'|'html'|'text', value: Node|string }</span>
+<table>
+<tr><th>Input</th><th>Result</th></tr>
+<tr><td>Node</td><td><code>{ kind:'node', value:node }</code></td></tr>
+<tr><td>string</td><td><code>{ kind:'html', value:string }</code></td></tr>
+<tr><td>object with own <code>html</code></td><td><code>{ kind:'html' }</code>; <code>null</code>/<code>undefined</code> → <code>''</code>; non-string → JSON</td></tr>
+<tr><td>other object</td><td><code>{ kind:'text', value: JSON }</code> (safe stringify)</td></tr>
+<tr><td>number, boolean, other</td><td><code>{ kind:'text', value:String(x) }</code></td></tr>
+<tr><td>null / undefined</td><td><code>{ kind:'text', value:'' }</code></td></tr>
+</table>
+<p>No sanitising happens here.</p>

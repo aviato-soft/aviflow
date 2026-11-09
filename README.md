@@ -1,163 +1,314 @@
-# AviFlow 🚀
+<p align="center">
+  <img src="./assets/avi-flow-logo.svg" alt="AviFlow logo" width="160" height="160">
+</p>
 
-A lightweight, zero-dependency JavaScript utility to automate network `fetch` requests natively using HTML `data-*` attributes. 
+<h1 align="center">AviFlow</h1>
 
-AviFlow enables declarative AJAX interactions directly from your HTML elements via event delegation, working seamlessly on elements added dynamically to the page. It can be dropped directly into legacy setups as a standalone browser script or bundled into modern ES module applications.
+<p align="center">
+  <strong>Declarative data flow for the DOM.</strong><br>
+  Describe <b>event -> action -> target</b> in a single HTML attribute.
+</p>
+
+<p align="center">
+  <img alt="version" src="https://img.shields.io/badge/version-2.0.1-e33ecb">
+  <img alt="module" src="https://img.shields.io/badge/module-ESM-blue">
+  <img alt="dependencies" src="https://img.shields.io/badge/dependencies-0-brightgreen">
+</p>
+
+<p align="center">
+  <a href="https://aviato-soft.github.io/aviflow/docs">Documentation</a> ·
+  <a href="https://github.com/aviato-soft/aviflow">GitHub</a>
+</p>
+
 
 ---
 
-## ✨ Features
+## Overview
 
-- **Micro-sized & Dependency-free**: Written in pure, modern vanilla JavaScript.
-- **Event Delegation**: Listens on the document body—automatically handles any elements added to the DOM dynamically via AJAX without re-binding.
-- **Dual-Loading Support**: Supports native ES Module `import` syntax and classic standalone `<script>` tags.
-- **Flexible Configuration**: Reads URLs, HTTP methods, target element injection, and payload bodies entirely from your element attributes.
-- **Smart Fallbacks**: Safely falls back to an anchor tag's native `href` if `data-url` isn't provided.
+**AviFlow** is a lightweight zero-dependency JavaScript utility that wires up behavior directly in your markup.  
+Add a **`data-flow`** attribute to any element, and **AviFlow** binds the event, runs the named action, and delivers the result to the target you specify, with no glue code required.
 
----
+```html
+<button data-flow="fetch -> #list" data-url="/api/items">Load items</button>
+<ul id="list"></ul>
+```
 
-## 📦 Architecture & Installation
+## Features 
+
+- **Declarative**: behavior lives in HTML, next to the element it affects.
+- **Simple grammar**: one `->` delimiter, at most three parts.
+- **Event modifiers**: `.passive`, `.prevent`, `.stop` and `.window` built in.
+- **Sync** or **async actions**: any function can be an action, including `async` ones.
+- **Extensible**: any function is an action. Pass actions to the constructor or assign them to `flow.action`, flat or nested (`admin.users.remove`).
+- **Scoped initialization**: bind a whole document or just a freshly inserted fragment.
+- **Strict validation**: malformed flows are logged as warnings and never registered.
+- **Micro-sized & Dependency-free**: Written in pure, modern vanilla `JavaScript`.
+
+
+## Architecture and Installation
 
 ### 1. Standalone Drop-in (Traditional Script)
-You can reference `dist/aviflow.min.js` locally or load it directly from jsDelivr:
 
-**Using Local File:**
-```html
-<script src="path/to/dist/aviflow.min.js"></script>
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    new AviFlow();
-  });
-</script>
+Download the file directly from the repository, [github.com/aviato-soft/aviflow](https://github.com/aviato-soft/aviflow), and host it yourself:
 
-**Using jsDelivr CDN:**
+| File | Description |
+| --- | --- |
+| `dist/aviflow.min.js` | Minified production build |
+| `dist/aviflow.min.map` | Source map, for debugging the minified build |
+
 ```html
-<script src="https://cdn.jsdelivr.net/npm/aviflow@1.1.5/dist/aviflow.min.js" crossorigin="anonymous" integrity="sha512-Wq2p7SfSecIiXY9s0Sc3HAZ66LrQbxadI9ckg+ISl6u4ZyNPRW7E6mHLTPnlBKhZMyAIKnkJ9PjiPblPA9mkGQ=="></script>
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    new AviFlow();
-  });
-</script>
+<script src="/path/to/aviflow.min.js"></script>
 ```
 
+- Best for offline use, intranets, or when you cannot rely on a third-party CDN.
+- Keep the `.map` file next to the `.js` file so browser dev tools can show the original source.
 
-### 2. Modern Application Setup (ES Module)
-Import the library inside your JavaScript application bundle:
+
+### 2. CDN (jsDelivr)
+
+The quickest way to try AviFlow, with no build step. Add the minified build to your page:
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/aviflow@2.0.1/dist/aviflow.min.js" crossorigin="anonymous" integrity="sha512-z2aj0ZmYFFRKIAWsYAmPHHHnTMMluk0fPQVWAyLMxukQBHrFzyOuYvLJSnR/6GZGEITlWS1fho9zEGAg4Lq8Pg=="></script>
+```
+
+- The version is pinned (`@2.0.0`), so your page will not change unexpectedly when a new release is published.
+- jsDelivr serves the file from a global CDN with caching and compression.
+- Best for prototypes, static pages and simple sites.
+
+
+### 3. npm
+
+Install the package from the npm registry:
+
+```bash
+npm i aviflow
+```
+
+Then import it in your code:
 
 ```js
-import AviFlow from './dist/aviflow.js';
-
-const myFlow = new AviFlow();
+import AviFlow from 'aviflow';
 ```
 
-## 🚀 HTML API Usage
+- Best for projects that use a bundler or build tool (Vite, webpack, Rollup, esbuild, etc.).
+- Version management is handled by your `package.json` and lock file.
 
-For a comprehensive guide to all HTML API usage examples, refer to the documentation at `/examples/readme/index.html`.
+### 4. Modern Application Setup (Local ES Module or CommonJS)
 
+The `dist/` folder also contains builds for specific module systems. Each comes with its own source map.
 
-### Example 1: Function Execution on Click
-Use a custom function defined on the AviFlow instance to execute arbitrary JavaScript code when an element with a specific `data-action` is clicked.
+| File | Format | Typical use |
+| --- | --- | --- |
+| `aviflow.esm.js` | ES module | Modern browsers (`<script type="module">`) and bundlers that support tree-shaking |
+| `aviflow.cjs.js` | CommonJS | Node.js and tooling that uses `require()` |
+
+```js
+// ES module
+import AviFlow from './dist/aviflow.esm.js';
+
+// CommonJS
+const AviFlow = require('./dist/aviflow.cjs.js');
+```
+
+## Quick start
 
 ```html
-<button data-action="clickTest">Click me</button>
+<form data-flow="submit.prevent -> fetch -> #result" action="/api/search">
+  <input name="q" placeholder="Search…">
+  <button>Go</button>
+</form>
+<div id="result"></div>
+
+<script type="module">
+  import AviFlow from './AviFlow.js';
+
+  new AviFlow(); // scans the document and binds every [data-flow] element
+</script>
 ```
 
-```javascript
-const myFlow = new AviFlow();
-myFlow.fn.clickTest = () => {
-  alert('It works!');
-};
-myFlow.init();
-```
+## Data flow grammar
 
-### Example 2: Simple GET Request (Content Injection)
-Simply apply data-action="fetch" to any interactive HTML element.
-Fetch data from an API and automatically inject the response text/HTML directly into another DOM container using data-target.
+A flow string is split on the `->` delimiter.
+
+| Form | Syntax | Behavior |
+| --- | --- | --- |
+| Full flow | `event -> action -> target` | Runs the action on the event and sends the result to the target. |
+| Implicit event | `action -> target` | Same as above, with the event defaulting to `click`. |
+| Eventless | `action` | Runs the action on `click`, with no target update. |
+| Terminated (with event) | `event -> action -\|` | Runs the action on the event and stops: no target update. |
+| Terminated | `action -\|` | Runs the action on `click` and stops: no target update. |
+
+### Components
+
+| Part | Description |
+| --- | --- |
+| **event** | A DOM event name, optionally followed by modifiers (e.g. `submit.prevent`, `click.prevent.stop`, `scroll.passive.window`). |
+| **action** | The name of a function in the flow's `action` object, or a dotted path of any depth into nested objects (e.g. `admin.users.remove`). |
+| **target** | A standard CSS selector for the element(s) that receive the action's result. |
+
+### Event modifiers
+
+| Modifier | Effect |
+| --- | --- |
+| `.prevent` | Calls `event.preventDefault()` before the action runs. |
+| `.stop` | Calls `event.stopPropagation()`. |
+| `.passive` | Registers the listener as passive (`{ passive: true }`). If another flow on the same element and event uses `.prevent`, `.passive` is ignored and a warning is logged, since browsers ignore `preventDefault()` in passive listeners. |
+| `.window` | Attaches the listener to `window` instead of the element (e.g. `resize.window`, `keydown.window`). |
+
+> Modifiers are recognized only at the **end** of the event part. `my.event` is treated as a plain event name.
+
+### Examples
 
 ```html
-<button 
-  data-action="fetch"
-  data-method="get"
-  data-url="https://jsonplaceholder.typicode.com/users/1" 
-  data-target="#result-box">
-  Load User Info
-</button>
+<!-- click -> fetch -> update #list -->
+<button data-flow="fetch -> #list">Refresh</button>
 
-<div id="result-box">Profile data will render here...</div>
+<!-- click -> load -->
+<button data-flow="load">Load</button>
+
+<!-- click -> fetch, no target -->
+<button data-flow="fetch -|">Ping</button>
+
+<!-- focus -> fetch, no target -->
+<input data-flow="focus -> fetch -|">
+
+<!-- Ajax form -->
+<form data-flow="submit.prevent -> fetch -> #result">…</form>
+
+<!-- Ajax form, nothing to update -->
+<form data-flow="submit.prevent -> save -|">…</form>
+
+<!-- Listen on window, passive -->
+<div data-flow="scroll.passive.window -> track -|"></div>
+
+<!-- Dotted action path into nested objects -->
+<button data-flow="admin.users.remove -> #list">Remove</button>
 ```
 
-### Example 3: Interactive POST Request with Payload
-Use standard attributes to pass customized HTTP methods and structured JSON payloads.
+### Invalid flows
 
-```html
-<a href="javascript:;" 
-   data-action="fetch" 
-   data-method="POST" 
-   data-url="https://jsonplaceholder.typicode.com/users"
-   data-param-id="11"
-   data-param-test="AviFlow is fast."
-   data-target="#response-log">
-   Submit Post
-</a>
+These are logged as warnings and not registered:
 
-<div id="response-log">The result of example #3 will be rendered here...</div>
-```
+- an empty action
+- an empty target, such as `fetch ->`
+- more than three parts
+- `-|` after three parts
 
+## Custom actions
 
-## 🛠️ Customization & Callbacks
-You can pass an options object during initialization to handle global hooks or catch internal custom events.
+An action is any function. It is invoked as `action.call(owner, element, event, target, flow)`, where:
 
-## Hook Interception Configuration
-``` JavaScript
+- `this` / `owner` is the object that contains the function (`flow.action` for top-level actions, the nested object for dotted paths)
+- `element` is the `HTMLElement` that triggered the flow
+- `event` is the DOM event object
+- `target` is the target CSS selector from the flow definition
+- `flow` is the `AviFlow` instance
+
+An action only needs to declare the parameters it uses, up to the last one it needs, e.g. `(element, event) => { … }`. Actions may be synchronous or asynchronous.
+
+```js
+import AviFlow from './AviFlow.js';
+
 const flow = new AviFlow({
-  selector: '[data-action="fetch"]', // Customize the selector if needed
-  onSuccess: (data, element) => {
-    console.log('Successfully fetched:', data);
+  // Pass actions at construction time, flat…
+  greet(element) {
+    return `Hello from <${element.tagName.toLowerCase()}>`;
   },
-  onError: (error, element) => {
-    console.error('Fetch operation failed:', error);
+
+  // …or nested, and call them with a dotted path: data-flow="admin.users.remove -> #list"
+  admin: {
+    users: {
+      async remove(element, event, target, flow) {
+        // `this` is the `admin.users` object
+      }
+    }
   }
 });
+
+// …or assign them later.
+flow.action.save = async (element, event, target, flow) => {
+  // …
+};
+flow.action.admin.users.add = (element) => { /* … */ };
 ```
 
-## Global Custom DOM Events
-AviFlow inherently bubbles up custom events. You can attach event listeners to higher-level elements or document.body directly:
+- If an action returns a value (or a promise), the result is delivered to the target. For async actions, only the most recent call per target is applied.
+- After a target is updated, `flow.init(target)` runs so any new `[data-flow]` elements inside it are bound.
+- An exact key in `flow.action` (even one containing dots) takes precedence over dotted-path resolution. Paths through `__proto__`, `prototype`, `constructor` and inherited `Object.prototype` members are rejected.
+- If an action name cannot be resolved, a warning is logged and nothing runs.
 
-```JavaScript
-document.body.addEventListener('aviflow:success', (event) => {
-  console.log('Global success event received payload:', event.detail);
-});
+The built-in `fetch` action is always available.
 
-document.body.addEventListener('aviflow:error', (event) => {
-  console.error('Global error caught:', event.detail);
-});
+## API reference
+
+### `new AviFlow(actions?, options?)`
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `actions` | `object` | Map of `name -> function`, merged with the built-in actions. |
+| `options` | `object` | Engine options (see below). |
+
+**Options**
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `autoInit` | `true` | Call `init()` automatically after construction. |
+| `root` | `document` | Default container scanned for `[data-flow]` elements. |
+
+#### `flow.init(root?)`
+
+Finds every `[data-flow]` element inside `root` (including `root` itself) and binds it. Defaults to `option.root`. Returns the instance, so calls can be chained.
+
+`root` can be a `Document`, an `HTMLElement`, or a CSS selector string. A selector initializes every matching element, and is resolved against the global `document`.
+
+It is safe to call repeatedly, including on content that is already bound. Existing listeners are reused, replaced when their options change, and removed when their event is no longer declared in `data-flow`. Removing or invalidating the attribute and calling `init()` again detaches the element's listeners.
+
+Use it to bind content added to the page after load:
+
+```js
+const flow = new AviFlow({}, { autoInit: false });
+flow.init();                                       // bind the whole document
+flow.init(document.querySelector('#new-content')); // bind a fragment
+flow.init('#new-content');                         // same, using a selector
 ```
 
-## 🏗️ Developer Setup
+#### `flow.resolveAction(path)`
 
-If you wish to modify or build AviFlow from source, clone this repository and follow these commands:
+Resolves an action name, including dotted paths, to `{ fn, owner }`, where `owner` is the object that contains the function (used as `this` when the action is called). Returns `null` if the name does not resolve to a function.
 
-### 1. Install Build Tooling (esbuild):
-```bash
-npm install
-```
+### Properties
 
-### 2. Compile Production Distributions:
-Build both dist/aviflow.js (ES Module) and dist/aviflow.min.js (minified fallback) via your package configuration:
-```bash
-npm run build
-```
+| Property | Description |
+| --- | --- |
+| `flow.action` | The actions object (`fetch` plus any custom actions). Assign to it at any time; nested objects are supported. |
+| `flow.option` | The resolved options object. |
+| `flow.tools` | Helpers available to actions: `element` (`AviElement`) and `text` (`AviText`). |
 
-### 3. Development Watch Mode:
-```bash
-npm run watch
-```
+## Documentation and examples
+
+More examples and the full documentation are available at
+**[aviato-soft.github.io/aviflow/docs](https://aviato-soft.github.io/aviflow/docs)**.
+
+
+
+## Open Source & Contributions
+
+This is an open-source project! We welcome developers to contribute, submit bug reports, suggest improvements, and build features.
+
+Issues and pull requests are welcome. Please keep changes focused and include an example flow that demonstrates the behavior you are adding or fixing.
+
+1. **Fork the repo** on [GitHub](https://github.com/aviato-soft/aviflow).
+2. **Create a branch** for your feature: git checkout -b feature/new-feature.
+3. **Commit your changes**: git commit -m "Add new feature".
+4. **Push your branch**: git push origin feature/new-feature.
+5. **Open a Pull Request!**
+
+
 
 ## Status
 
-[![jsdeliver](https://data.jsdelivr.com/v1/package/npm/aviflow/badge)](https://www.jsdelivr.com/package/npm/aviflow)
-[![npm version](https://img.shields.io/npm/v/aviflow?logo=npm&logoColor=fff)](https://www.npmjs.com/package/aviflow)
-![Codecov](https://img.shields.io/codecov/c/github/aviato-soft/aviflow)
+[![jsdeliver](https://data.jsdelivr.com/v1/package/npm/aviflow/badge)](https://www.jsdelivr.com/package/npm/aviflow) [![npm version](https://img.shields.io/npm/v/aviflow?logo=npm&logoColor=fff)](https://www.npmjs.com/package/aviflow) ![Codecov](https://img.shields.io/codecov/c/github/aviato-soft/aviflow)
 
 
 

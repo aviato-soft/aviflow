@@ -1,0 +1,11 @@
+<h3>AviFlow.tools.element.togglePendingState(element, isPending, opt)</h3>
+<span class="sig">AviFlow.tools.element.togglePendingState(element, isPending = null, opt = {}) -> HTMLElement|SVGElement | null</span>
+<p><code>true</code> = enter pending, <code>false</code> = restore, <code>null</code> = toggle. Only what was changed is restored, using the values saved at entry. Entering twice is a no-op. Tip: call with <code>false</code> in a <code>finally</code> block.</p>
+<table>
+<tr><th>Option</th><th>Default</th><th>Effect</th></tr>
+<tr><td><code>pending-class</code></td><td><code>'pending'</code></td><td>Class(es) added.</td></tr>
+<tr><td><code>pending-opacity</code></td><td><code>0.6</code></td><td>Inline opacity; <code>false</code> disables.</td></tr>
+<tr><td><code>pending-pointer</code></td><td><code>'none'</code></td><td><code>pointer-events</code>; <code>false</code> disables.</td></tr>
+<tr><td><code>pending-disabled</code></td><td><code>true</code></td><td>Disables form controls (INPUT, BUTTON, SELECT, TEXTAREA, FIELDSET, or anything with a <code>disabled</code> property).</td></tr>
+</table>
+<p>Also sets <code>aria-busy="true"</code> while pending and restores its previous value afterwards. Options come from <code>data-opt-pending-*</code> attributes, overridden by <code>opt</code>. "Off" values are <code>false</code>, <code>'false'</code>, <code>null</code>, <code>undefined</code>.</p>

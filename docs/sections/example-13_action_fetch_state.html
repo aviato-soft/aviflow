@@ -1,0 +1,113 @@
+<!-- Case 13: Fetch Action State Handler -->
+<h2>Example: Fetch Action State Handler</h2>
+<h3 class="code">[Event] -> fetch -> [Target]</h3>
+<span class="sig">data-flow="fetch -> #output-13"</span>
+
+<div class="example">
+  <p class"info"><code>data-flow="fetch -> #output-13"</code> is an abreviation for <code>data-flow="click -> fetch -> #output-13"</code></p>
+
+  <pre><code>&lt;button
+  data-flow="fetch -&gt; #output-13"
+  data-method="get"
+  data-url='data:application/json;charset=utf-8,"Hello World!"'&gt;Usual behaviour&lt;/button&gt;
+  
+&lt;button
+  data-flow="fetch -&gt; #output-13"
+  data-method="get"
+  data-on-success="fetchCustomHandler.on.success"
+  data-url='data:application/json;charset=utf-8,{"success": true, "html":"Hello Success!"}'&gt;Success Data&lt;/button&gt;
+  
+&lt;button
+  data-flow="fetch -&gt; #output-13"
+  data-method="get"
+  data-on-fail="fetchCustomHandler.on.fail"
+  data-url='data:application/json;charset=utf-8,{"success": false, "html":"Hello Failure!"}'&gt;Fail Data&lt;/button&gt;
+  
+&lt;button
+  data-flow="fetch -&gt; #output-13"
+  data-method="get"
+  data-on-error="fetchCustomHandler.on.error"
+  data-url="/invalid-url-404"&gt;Error: 404&lt;/button&gt;
+  
+&lt;button 
+  data-flow="fetchCustomHandler.clear -&gt; .output-block"&gt;Clear&lt;/button&gt;
+
+&lt;div class="output flex-output"&gt;
+  &lt;span&gt;Target:&lt;/span&gt;
+  &lt;div id="output-13" class="output-block"&gt;&lt;em&gt;Output will appear here...&lt;/em&gt;&lt;/div&gt;
+  &lt;span&gt;Success:&lt;/span&gt;
+  &lt;div id="output-13-success" class="output-block"&gt;&lt;em&gt;Success Output will appear here...&lt;/em&gt;&lt;/div&gt;
+  &lt;span&gt;Failure:&lt;/span&gt;
+  &lt;div id="output-13-fail" class="output-block"&gt;&lt;em&gt;Fail Output will appear here...&lt;/em&gt;&lt;/div&gt;
+  &lt;span&gt;Errror:&lt;/span&gt;
+  &lt;div id="output-13-error" class="output-block"&gt;&lt;em&gt;Error Output will appear here...&lt;/em&gt;&lt;/div&gt;
+&lt;/div&gt;
+
+&lt;script&gt;
+  const flow = new AviFlow({
+    fetchCustomHandler: {
+    clear: () => {
+      return '<em>Output will appear here...</em>';
+    },
+    on: {
+      error: (data, element, event, targetSelector, flow) => {
+        const target = document.getElementById('output-13-error');
+        flow.tools.element.setContent(target, `The error is: ${data}` );
+      },
+      fail: (data, element, event, targetSelector, flow) => {
+        const target = document.getElementById('output-13-fail');
+        flow.tools.element.setContent(target, `Failure: ${data.html}`);
+      },
+      success: (data, element, event, targetSelector, flow) => {
+        const target = document.getElementById('output-13-success');
+        flow.tools.element.setContent(target, `Success: ${data.html}`);
+      }
+    }
+  },
+
+  });
+&lt;/script&gt;
+  
+  </code></pre>
+
+
+  <div class="form">
+    <button
+      data-flow="fetch -> #output-13"
+      data-method="get"
+      data-url='data:application/json;charset=utf-8,"Hello World!"'>Usual behaviour</button>
+
+    <button
+      data-flow="fetch -> #output-13"
+      data-method="get"
+      data-on-success="fetchCustomHandler.on.success"
+      data-url='data:application/json;charset=utf-8,{"success": true, "html":"Hello Success!"}'>Success Data</button>
+
+    <button
+      data-flow="fetch -> #output-13"
+      data-method="get"
+      data-on-fail="fetchCustomHandler.on.fail"
+      data-url='data:application/json;charset=utf-8,{"success": false, "html":"Hello Failure!"}'>Fail Data</button>
+
+    <button
+      data-flow="fetch -> #output-13"
+      data-method="get"
+      data-on-error="fetchCustomHandler.on.error"
+      data-url="/invalid-url-404">Error: 404</button>
+
+    <button data-flow="fetchCustomHandler.clear -> .output-block">Clear</button>
+      
+  </div>
+
+  <div class="output flex-output">
+    <span>Target:</span>
+    <div id="output-13" class="output-block"><em>Output will appear here...</em></div>
+    <span>Success:</span>
+    <div id="output-13-success" class="output-block"><em>Success Output will appear here...</em></div>
+    <span>Failure:</span>
+    <div id="output-13-fail" class="output-block"><em>Fail Output will appear here...</em></div>
+    <span>Errror:</span>
+    <div id="output-13-error" class="output-block"><em>Error Output will appear here...</em></div>  
+  </div>
+
+</div>

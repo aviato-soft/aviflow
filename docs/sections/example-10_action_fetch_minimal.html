@@ -1,0 +1,32 @@
+<!-- Case 10: Minimalist fetch action -->
+<h2>Example: Minimal fetch action</h2>
+<h3 class="code">[Event] -> fetch -> [Target]</h3>
+<span class="sig">data-flow="fetch -> #output-10"</span>
+
+<div class="example">
+
+  <p class="info">Click on <code>Button</code> will load data using trigger attributes:</p>
+  <table>
+    <tr>
+      <td>data-url</td>
+      <td>https://jsonplaceholder.typicode.com/posts</td>
+    </tr>
+  </table>
+  <p class="info">The result will be put on the taraget: #output-10</p>
+
+
+  <pre><code>&lt;button data-flow="fetch -> #output-10" data-url="https://jsonplaceholder.typicode.com/posts"&gt;Get data using POST&lt;/button&gt;
+&lt;div id="output-10"&gt;&lt;/div&gt;
+
+&lt;script&gt;
+  const flow = new AviFlow();
+&lt;/script&gt;</code></pre>
+
+
+  <div class="form">
+    <button data-flow="fetch -> #output-10" data-url="https://jsonplaceholder.typicode.com/posts">Get data using POST</button>
+  </div>
+
+  <div id="output-10" class="output"><em>Output will appear here...</em></div>
+
+</div>

@@ -1,0 +1,28 @@
+<h3>resolveAction(path)</h3>
+<span class="sig">resolveAction(path: string) -> {{fn: Function, owner: Object}|null}</span>
+<p>Resolves an action name, including dotted paths, to <code>{ fn, owner }</code>,
+  where <code>owner</code> is the object that contains the function (used as <code>this</code> when the action is
+  called).
+  Returns <code>null</code> if the name does not resolve to a function.</p>
+
+<p>Properties</p>
+<table>
+  <tr>
+    <th>Property</th>
+    <th>Description</th>
+  </tr>
+  <tr>
+    <td><code>flow.action</code></td>
+    <td>The actions object (<code>fetch</code> plus any custom actions). Assign to it at any time; nested objects
+      are supported.</td>
+  </tr>
+  <tr>
+    <td><code>flow.option</code></td>
+    <td>The resolved options object.</td>
+  </tr>
+  <tr>
+    <td><code>flow.tools</code></td>
+    <td>Helpers available to actions: <code>element</code> (<code>AviElement</code>) and <code>text</code>
+      (<code>AviText</code>).</td>
+  </tr>
+</table>
