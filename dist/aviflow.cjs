@@ -1104,4 +1104,5 @@ var AviFlow = class {
   }
 };
 var AviFlow_default = AviFlow;
-//# sourceMappingURL=aviflow.cjs.js.map
+module.exports = module.exports.default;
+//# sourceMappingURL=aviflow.cjs.map

@@ -1,4 +1,4 @@
-<h2>Architecture and installation</h2>
+<h2>Architecture and Usage</h2>
 <p>There are four ways to use the AviFlow JavaScript utility:</p>
 <ol>
 <li><a href="#main-install-1_standalone-drop-in-traditional-script">As standalone drop in</a></li>
@@ -6,6 +6,18 @@
 <li><a href="#main-install-3_npm">Using npm</a></li>
 <li><a href="#main-install-4_local-es-module">Modern Application Setup (Local ES Module or CommonJS)</a></li>
 </ol>
+
+<p>Every method below uses the same markup and the same idea: create <strong>one</strong> <code>AviFlow</code>
+  instance after the DOM is ready, and it binds every <code>[data-flow]</code> element. Only the way you load the
+  library, and therefore the way <code>app.js</code> gets the class, changes.</p>
+<p><strong>Shared markup</strong> (<code>index.html</code> body, identical for every method):</p>
+<pre><code>&lt;button data-flow="greet -&gt; #output"&gt;Say hello&lt;/button&gt;
+&lt;div id="output"&gt;&lt;/div&gt;</code></pre>
+<p><code>greet</code> is a custom action defined in each <code>app.js</code>. A flow can also use only the built-in
+  actions (<code>fetch</code>, <code>value</code>), in which case <code>new AviFlow()</code> with no arguments is
+  enough.</p>
+<div class="separator"></div>
+
 
 <h3 id="main-install-1_standalone-drop-in-traditional-script">1. Standalone Drop-in (Traditional Script)</h3>
 <p>Download the file directly from the repository, <a href="https://github.com/aviato-soft/aviflow">github.com/aviato-soft/aviflow</a>, and host it yourself:</p>
@@ -27,8 +39,21 @@
     </tr>
   </tbody>
 </table>
-<pre><code>&lt;script src="/path/to/aviflow.min.js"&gt;&lt;/script&gt;</code></pre>
+<p>The build exposes the class as the global <code>window.AviFlow</code>.</p>
+<p><strong>index.html</strong></p>
+<pre><code>&lt;script src="/path/to/aviflow.min.js"&gt;&lt;/script&gt;
+&lt;script src="app.js"&gt;&lt;/script&gt;</code></pre>
+<p><strong>app.js</strong></p>
+<pre><code>document.addEventListener('DOMContentLoaded', () =&gt; {
+  const flow = new window.AviFlow({
+    greet(element) {
+      return `Hello from &lt;${element.tagName.toLowerCase()}&gt;`;
+    }
+  });
+});</code></pre>
 <ul>
+  <li>Load <code>aviflow.min.js</code> <strong>before</strong> <code>app.js</code>, so the global exists when your code
+    runs.</li>
   <li>Best for offline use, intranets, or when you cannot rely on a third-party CDN.</li>
   <li>Keep the <code>.map</code> file next to the <code>.js</code> file so browser dev tools can show the original
     source.</li>
@@ -38,14 +63,26 @@
 
 <h3 id="main-install-2_cdn-jsdelivr">2. CDN (jsDelivr)</h3>
 <p>The quickest way to try AviFlow, with no build step. Add the minified build to your page:</p>
+<p><strong>index.html</strong></p>
 <pre><code>&lt;script 
-  src="https://cdn.jsdelivr.net/npm/aviflow@2.0.2/dist/aviflow.min.js" 
+  src="https://cdn.jsdelivr.net/npm/aviflow@2.0.3/dist/aviflow.min.js" 
   crossorigin="anonymous" 
-  integrity="sha512-z2aj0ZmYFFRKIAWsYAmPHHHnTMMluk0fPQVWAyLMxukQBHrFzyOuYvLJSnR/6GZGEITlWS1fho9zEGAg4Lq8Pg=="&gt;
-&lt;/script&gt;</code></pre>
+  integrity="sha512-REPLACE_WITH_THE_2.0.3_HASH"&gt;
+&lt;/script&gt;
+&lt;script src="app.js"&gt;&lt;/script&gt;</code></pre>
+<p><strong>app.js</strong></p>
+<pre><code>document.addEventListener('DOMContentLoaded', () =&gt; {
+  const flow = new window.AviFlow({
+    greet(element) {
+      return `Hello from &lt;${element.tagName.toLowerCase()}&gt;`;
+    }
+  });
+});</code></pre>
 <ul>
-  <li>The version is pinned (<code>@2.0.2</code>), so your page will not change unexpectedly when a new release is
+  <li>The version is pinned (<code>@2.0.3</code>), so your page will not change unexpectedly when a new release is
     published.</li>
+  <li>The <code>integrity</code> value is the Subresource Integrity hash of that exact file. You can copy it from the
+    package page on <a href="https://www.jsdelivr.com/package/npm/aviflow">jsDelivr</a></li>
   <li>jsDelivr serves the file from a global CDN with caching and compression.</li>
   <li>Best for prototypes, static pages and simple sites.</li>
 </ul>
@@ -56,10 +93,23 @@
 <h3 id="main-install-3_npm">3. npm</h3>
 <p>Install the package from the npm registry:</p>
 <pre><code>npm i aviflow</code></pre>
-<p>Then import it in your code:</p>
-<pre><code>import AviFlow from 'aviflow';</code></pre>
+<p><strong>app.js</strong></p>
+<pre><code>import AviFlow from 'aviflow';
+
+document.addEventListener('DOMContentLoaded', () =&gt; {
+  const flow = new AviFlow({
+    greet(element) {
+      return `Hello from &lt;${element.tagName.toLowerCase()}&gt;`;
+    }
+  });
+});</code></pre>
+<p><strong>index.html</strong></p>
+<pre><code>&lt;script type="module" src="/app.js"&gt;&lt;/script&gt;</code></pre>
 <ul>
-  <li>Best for projects that use a bundler or build tool (Vite, webpack, Rollup, esbuild, etc.).</li>
+  <li>Best for projects that use a bundler or build tool (Vite, webpack, Rollup, esbuild, etc.). The bundler resolves
+    <code>'aviflow'</code> and the <code>&lt;script&gt;</code> tag points at your entry file (or at the bundle it
+    produces).</li>
+  <li>The class is the default export, so there is no <code>.default</code> to unwrap.</li>
   <li>Version management is handled by your <code>package.json</code> and lock file.</li>
 </ul>
 <div class="separator"></div>
@@ -84,13 +134,46 @@
       <td>Modern browsers (<code>&lt;script type="module"&gt;</code>) and bundlers that support tree-shaking</td>
     </tr>
     <tr>
-      <td><code>aviflow.cjs.js</code></td>
+      <td><code>aviflow.cjs</code></td>
       <td>CommonJS</td>
-      <td>Node.js and tooling that uses <code>require()</code></td>
+      <td>Tooling and bundlers that use <code>require()</code></td>
     </tr>
   </tbody>
 </table>
-<pre><code>// ES module
-import AviFlow from './dist/aviflow.esm.js';</code></pre>
-<pre><code>// CommonJS
-const AviFlow = require('./dist/aviflow.cjs.js');</code></pre>
+
+<h4>ES module</h4>
+<p><strong>app.js</strong></p>
+<pre><code>import AviFlow from './dist/aviflow.esm.js';
+
+document.addEventListener('DOMContentLoaded', () =&gt; {
+  const flow = new AviFlow({
+    greet(element) {
+      return `Hello from &lt;${element.tagName.toLowerCase()}&gt;`;
+    }
+  });
+});</code></pre>
+<p><strong>index.html</strong></p>
+<pre><code>&lt;script type="module" src="app.js"&gt;&lt;/script&gt;</code></pre>
+<ul>
+  <li>Module scripts are deferred and run in strict mode, and they need to be served over
+    <code>http(s)://</code> (not opened from <code>file://</code>).</li>
+</ul>
+
+<h4>CommonJS</h4>
+<p><strong>app.js</strong></p>
+<pre><code>const AviFlow = require('./dist/aviflow.cjs');
+
+document.addEventListener('DOMContentLoaded', () =&gt; {
+  const flow = new AviFlow({
+    greet(element) {
+      return `Hello from &lt;${element.tagName.toLowerCase()}&gt;`;
+    }
+  });
+});</code></pre>
+<ul>
+  <li><code>require()</code> returns the class directly (no <code>.default</code>).</li>
+  <li><code>app.js</code> must be treated as CommonJS by your tooling. In a package that sets
+    <code>"type": "module"</code>, name the file <code>app.cjs</code>.</li>
+  <li>AviFlow works on the DOM. Use the CommonJS build in code that is bundled for the browser, or run it in a DOM
+    environment such as jsdom.</li>
+</ul>
