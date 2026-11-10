@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+
+## [2.0.3] - 2026-11-10T10:53:18Z
 ### Changed
 - documentation related to installation
 - expose class directly (without .default)
