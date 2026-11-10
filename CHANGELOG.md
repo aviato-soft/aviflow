@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.2] - 2026-11-10T08:36:07Z
+
 ### Changed
 - publish extension change .yaml -> .yml
 ### Fixed
