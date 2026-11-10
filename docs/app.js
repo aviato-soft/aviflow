@@ -1,5 +1,3 @@
-import AviFlow from '../src/AviFlow.js';
-
 const app = {};
 app.data = {
   content: [
@@ -15,13 +13,13 @@ app.data = {
       page: 'main-features'
     },
     {
-      label: 'Installation',
+      label: 'Architecture and Usage',
       page: 'main-installation'
-    },
+    },/*
     {
       label: 'Quick Start',
       page: 'main-quick-start'
-    },
+    },*/
     {
       label: 'Data flow grammar',
       page: 'main-data-attributes'
@@ -524,7 +522,7 @@ app.key = {
 document.addEventListener('DOMContentLoaded', async () => {
   // hljs.highlightAll();
 
-  app.flow = new AviFlow({
+  app.flow = new window.AviFlow({
     ...app.examples,
     ...app.actions
   }, { 
@@ -535,5 +533,5 @@ document.addEventListener('DOMContentLoaded', async () => {
   await app.fn.loadContent();
   app.flow.init();
 
-  console.log(app); //- uncomment to debug
+//console.log(app); //- uncomment to debug
 });

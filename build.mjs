@@ -19,8 +19,9 @@ async function runBuild() {
   // 2. CommonJS build (for Node.js environments)
   await esbuild.build({
     ...commonConfig,
-    outfile: 'dist/aviflow.cjs.js',
+    outfile: 'dist/aviflow.cjs',
     format: 'cjs',
+    footer: { js: 'module.exports = module.exports.default;' }
   });
 
   // 3. IIFE Minified build (for browser <script> tag usage)
@@ -29,6 +30,7 @@ async function runBuild() {
     outfile: 'dist/aviflow.min.js',
     format: 'iife',
     globalName: 'AviFlow',
+    footer: { js: 'AviFlow = AviFlow.default;' },
     minify: true,
   });
 
