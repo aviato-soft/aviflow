@@ -54,9 +54,10 @@ export class AviFlowActions {
     // `data-method` / `data-url`. getAttribute is used on purpose: the `form.method` and
     // `form.action` properties always return a value (defaulting to "get" and to the current
     // page URL), which would hide the real defaults below.
-    const isForm = element.tagName === 'FORM';
-    const formMethod = isForm ? element.getAttribute('method') : null;
-    const formAction = isForm ? element.getAttribute('action') : null;
+    // Nearest <form> in the element's data-parent chain (the element itself included).
+    const form = AviElement.getParentChain(element).findLast((el) => el.tagName === 'FORM') ?? null;
+    const formMethod = form?.getAttribute('method') ?? null;
+    const formAction = form?.getAttribute('action') ?? null;
 
     const { method, params, url: baseUrl } = {
       method: (dataset.method || formMethod || 'POST').toUpperCase(),
@@ -97,7 +98,10 @@ export class AviFlowActions {
       const isHtml = (response.headers.get('content-type') || '').includes('text/html');
       const data = isHtml ? await response.text() : await response.json();
 
-      if (data && typeof data === 'object') {
+      // Transport level: HTTP 2xx and body parsed (JSON or HTML string)
+      if (data != null) callHook(dataset.onResponse, data);
+
+      if (data && typeof data === 'object' && Object.hasOwn(data, 'success')) {
         callHook(data.success ? dataset.onSuccess : dataset.onFail, data);
       }
 

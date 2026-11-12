@@ -13,6 +13,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Added
+- **`AviElement.getParentChain(element)`**: public static method that returns the `data-parent` chain of an element as an array, root ancestor first, element last.
+  - Resolves each `data-parent` selector against the closest ancestor first, then falls back to `document.querySelector`.
+  - Protects against cycles; a selector that matches nothing ends the chain; an invalid selector logs a warning and ends the chain.
+  - Returns `[]` for `null`, `undefined` or non-element input.
+  - Exposed as `AviFlow.tools.element.getParentChain`.
+- **: called for every successful HTTP response (2xx) with a parsed body, JSON object or HTML string.
+  - Called as `hook(data, element, event, targetSelector, flow)`, like `onSuccess` / `onFail`.
+  - Runs before `onSuccess` / `onFail`.
+  - Not called for HTTP errors, which are still thrown to `data-on-error`.
+- Jest tests: `AviElement.getParentChain.test.js`, plus new `onResponse` cases in `AviFlowActions.fetchData.test.js`.
+- Documentation page: `api-tools-element-getParentChain.html`.
+
+### Fixed
+- **`fetch` ignored the parent form's native `method` and `action`.** For an element with `data-parent="form"` (for example a `<select>` inside a form), the native `method` / `action` attributes were only used when the element itself was the `<form>`, so the request silently fell back to `POST` and `/`. The nearest `<form>` in the element's `data-parent` chain (the element itself included) is now used.
+  - Priority is unchanged in spirit: `data-method` / `data-url` (own or inherited) → native `method` / `action` of the nearest parent form → defaults (`POST`, `/`).
+- **A hook name could not be resolved on the test page**: `test.html` passed `...app.actions` while `app.actions` was undefined, so the `success` action was never registered. The updated `test_1.html` registers it.
+
+### Changed
+- `fetchData` documentation (docblock) lists the `onResponse` hook and corrects the `onSucces` typo to `onSuccess`.
+
 
 ## [2.0.3] - 2026-11-10T10:53:18Z
 ### Changed
