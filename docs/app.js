@@ -80,6 +80,10 @@ app.data = {
       page: 'api-tools-element-getParams'
     },
     {
+      label: 'getParentChain', 
+      page: 'api-tools-element-getParentChain'
+    },
+    {
       label: 'parseContent',
       page: 'api-tools-element-parseContent'
     },

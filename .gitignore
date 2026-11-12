@@ -10,3 +10,4 @@ deploy.prop
 deploy-lib.sh
 package.json
 SYSTEM.md
+docs/test.html

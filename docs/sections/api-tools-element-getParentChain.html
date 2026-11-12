@@ -1,0 +1,20 @@
+<h3>AviFlow.tools.element.getParentChain(element)</h3>
+<span class="sig">AviFlow.tools.element.getParentChain(element) -> HTMLElement[]</span>
+<p>Resolves the <code>data-parent</code> chain of an element and returns it as an array ordered root ancestor first, <code>element</code> last. This is the same chain used by <code>getDataset</code> and <code>getParams</code> to inherit <code>data-*</code> attributes, and by the <code>fetch</code> action to find the nearest parent <code>&lt;form&gt;</code>.</p>
+<table>
+<tr><th>Param</th><th>Description</th></tr>
+<tr><td><code>element</code></td><td class="code">The element to start from. Returns <code>[]</code> when it is <code>null</code>, <code>undefined</code> or not an element.</td></tr>
+</table>
+<h4>Resolution order</h4>
+<ol><li>The element itself is always part of the chain (last item). Without <code>data-parent</code> the result is <code>[element]</code>.</li><li><code>data-parent</code> is a CSS selector. It is matched first against the closest ancestor (<code>parentElement.closest(selector)</code>), nearest first.</li><li>If no ancestor matches, the first match in the document is used (<code>document.querySelector(selector)</code>), so the parent does not have to contain the element.</li><li>The parent's own <code>data-parent</code> is then followed in the same way, until an element has none.</li></ol>
+<h4>Safety</h4>
+<ul><li>Cycles (<code>a</code> points to <code>b</code>, <code>b</code> points to <code>a</code>) are detected: each element appears once and the walk stops.</li><li>A selector that matches nothing ends the chain at the last element found.</li><li>An invalid selector logs a warning and ends the chain at the last element found. It never throws.</li></ul>
+<pre><code>&lt;form action="/users" method="post"&gt;
+  &lt;select id="color" data-parent="form"&gt;...&lt;/select&gt;
+&lt;/form&gt;
+AviFlow.tools.element.getParentChain(color)   // [form, select#color]
+AviFlow.tools.element.getParentChain(form)    // [form]
+
+&lt;div id="panel"&gt;&lt;/div&gt;
+&lt;button id="btn" data-parent="#panel"&gt;&lt;/button&gt;
+AviFlow.tools.element.getParentChain(btn)     // [div#panel, button#btn]  (document fallback)</code></pre>

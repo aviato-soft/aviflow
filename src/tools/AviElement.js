@@ -297,6 +297,18 @@ export class AviElement {
 
 
     /**
+     * Returns the data-parent chain of an element, root ancestor first, element last.
+     * @param {HTMLElement} element
+     * @returns {HTMLElement[]}
+     */
+    static getParentChain(element) {
+        return element?.dataset
+            ? AviElement.#resolveChain(element, '[AviFlow.tools.element.getParentChain]')
+            : [];
+    }
+
+
+    /**
      * Retrieves parameters from the element and its `data-parent` ancestors:
      * `data-{prefix}-*` attributes plus fields of forms (strict: only elements
      * that are themselves a `<form>` contribute fields).
