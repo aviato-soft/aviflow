@@ -236,6 +236,14 @@ var AviElement = class _AviElement {
     return formParams;
   }
   /**
+   * Returns the data-parent chain of an element, root ancestor first, element last.
+   * @param {HTMLElement} element
+   * @returns {HTMLElement[]}
+   */
+  static getParentChain(element) {
+    return element?.dataset ? _AviElement.#resolveChain(element, "[AviFlow.tools.element.getParentChain]") : [];
+  }
+  /**
    * Retrieves parameters from the element and its `data-parent` ancestors:
    * `data-{prefix}-*` attributes plus fields of forms (strict: only elements
    * that are themselves a `<form>` contribute fields).
@@ -919,9 +927,9 @@ var AviFlowActions = class {
       const resolved = flow?.resolveAction(name);
       resolved?.fn.call(resolved.owner, payload, element, event, targetSelector, flow);
     };
-    const isForm = element.tagName === "FORM";
-    const formMethod = isForm ? element.getAttribute("method") : null;
-    const formAction = isForm ? element.getAttribute("action") : null;
+    const form = AviElement.getParentChain(element).findLast((el) => el.tagName === "FORM") ?? null;
+    const formMethod = form?.getAttribute("method") ?? null;
+    const formAction = form?.getAttribute("action") ?? null;
     const { method, params, url: baseUrl } = {
       method: (dataset.method || formMethod || "POST").toUpperCase(),
       params: AviElement.getParams(element),
@@ -949,7 +957,8 @@ var AviFlowActions = class {
       }
       const isHtml = (response.headers.get("content-type") || "").includes("text/html");
       const data = isHtml ? await response.text() : await response.json();
-      if (data && typeof data === "object") {
+      if (data != null) callHook(dataset.onResponse, data);
+      if (data && typeof data === "object" && Object.hasOwn(data, "success")) {
         callHook(data.success ? dataset.onSuccess : dataset.onFail, data);
       }
       return data;

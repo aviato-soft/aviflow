@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+
+## [2.0.4] - 2026-11-12T10:03:12Z
 ### Added
 - **`AviElement.getParentChain(element)`**: public static method that returns the `data-parent` chain of an element as an array, root ancestor first, element last.
   - Resolves each `data-parent` selector against the closest ancestor first, then falls back to `document.querySelector`.
