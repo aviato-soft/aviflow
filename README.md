@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <img alt="version" src="https://img.shields.io/badge/version-2.0.3-e33ecb">
+  <img alt="version" src="https://img.shields.io/badge/version-2.0.4-e33ecb">
   <img alt="module" src="https://img.shields.io/badge/module-ESM-blue">
   <img alt="dependencies" src="https://img.shields.io/badge/dependencies-0-brightgreen">
 </p>
@@ -100,7 +100,7 @@ The quickest way to try AviFlow, with no build step. Add the minified build to y
 **`index.html`**
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/aviflow@2.0.3/dist/aviflow.min.js" crossorigin="anonymous" integrity="sha512-uNd0PuKN/tBlCOUpZvqfCDnguGfKCGCqBPC7aUWBhR0iUFqjrUOeDtF6eXpXLzIl77czNPRzY8CGn4jdVW/GFg=="></script>
+<script src="https://cdn.jsdelivr.net/npm/aviflow@2.0.4/dist/aviflow.min.js" crossorigin="anonymous" integrity="sha512-cn1mhSQ3zpIfj2zHr149eUnOed5IzxA9FMSJgbwIz+6IoSOHJX8sGJXSKrVOdHAlFLG0D7MF7kAQW/Q5AQsiMQ=="></script>
 <script src="app.js"></script>
 ```
 
@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 ```
 
-- The version is pinned (`@2.0.3`), so your page will not change unexpectedly when a new release is published.
+- The version is pinned (`@2.0.4`), so your page will not change unexpectedly when a new release is published.
 - The `integrity` value is the Subresource Integrity hash of that exact file. You can copy it from the package page on [jsDelivr](https://www.jsdelivr.com/package/npm/aviflow)
 - jsDelivr serves the file from a global CDN with caching and compression.
 - Best for prototypes, static pages and simple sites.
