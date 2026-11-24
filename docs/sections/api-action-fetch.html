@@ -9,6 +9,9 @@
 <tr><td><code>data-method</code></td><td>HTTP method (default <code>POST</code>, upper-cased).</td></tr>
 <tr><td><code>data-param-*</code> + form fields</td><td>Parameters, via <code>AviFlow.tools.element.getParams</code>. Inherited through <code>data-parent</code>.</td></tr>
 <tr><td><code>data-opt-pending-*</code></td><td>Pending-state options, see <a href="#togglePendingState">togglePendingState</a>.</td></tr>
+<tr><td><code>data-on-before</code></td><td>Optional hook called before the request is sent, see <a href="#fetchHooks">Hooks</a>.</td></tr>
+<tr><td><code>data-on</code></td><td>Shortcut for all the hooks below, see <a href="#fetchHooks">Hooks</a>.</td></tr>
+<tr><td><code>data-on-response</code> / <code>data-on-success</code> / <code>data-on-fail</code></td><td>Optional hooks called after the response, see <a href="#fetchHooks">Hooks</a>.</td></tr>
 </table>
 <p><code>opt</code> is spread over the internal request options (<code>headers</code>, <code>method</code>, <code>params</code>, <code>url</code>, …), so it can override any of them.</p>
 <h4>Request behaviour</h4>
@@ -17,14 +20,34 @@
 <li><strong>GET / HEAD</strong>: params are appended to the URL query string.</li>
 <li><strong>POST / PUT</strong>: params are sent as <code>FormData</code>.</li>
 <li><strong>Other methods</strong>: params sent as JSON body with <code>Content-Type: application/json; charset=UTF-8</code>.</li>
+<li>Before the request, the element's active content is set to <code>pending</code> (<code>AviElement.setActiveContent(element, 'pending')</code>). The action does not switch it back.</li>
 <li>The element is put in pending state during the request and restored in <code>finally</code>.</li>
 </ul>
+<h4 id="fetchHooks">Hooks</h4>
+<p>Each hook attribute holds the name of an action, resolved through <code>flow.resolveAction</code> and called as <code>hook(payload, element, event, targetSelector, flow)</code>. Hooks are optional and are not awaited.</p>
+<table>
+<tr><th>Attribute</th><th>Called</th><th>Payload</th></tr>
+<tr><td><code>data-on-before</code></td><td>Before the request is sent. Runs first, before the element's active content is set to <code>pending</code> and before the pending state is turned on.</td><td>The request params (same object used for the query string / body).</td></tr>
+<tr><td><code>data-on-response</code></td><td>HTTP 2xx and body parsed (JSON or HTML string).</td><td>The parsed response.</td></tr>
+<tr><td><code>data-on-success</code></td><td>JSON response with a truthy <code>success</code>.</td><td>The parsed response.</td></tr>
+<tr><td><code>data-on-fail</code></td><td>JSON response with a falsy <code>success</code>.</td><td>The parsed response.</td></tr>
+</table>
+<h5>Shortcut: <code>data-on</code></h5>
+<p><code>data-on="name"</code> is equivalent to setting every hook attribute to <code>name</code> followed by the hook:</p>
+<pre><code>data-on="trigger.on"
+&lt;!-- same as --&gt;
+data-on-before="trigger.on.before"
+data-on-error="trigger.on.error"
+data-on-fail="trigger.on.fail"
+data-on-response="trigger.on.response"
+data-on-success="trigger.on.success"</code></pre>
+<p>An explicit <code>data-on-*</code> attribute takes priority over the shortcut for that hook. A derived name that matches no registered action is skipped. <code>data-on-error</code> is read by the flow engine, not by this action.</p>
+<p>If <code>data-on-before</code> throws, no request is sent and the error is thrown to the caller. Request errors are not handled by this action: they are thrown to the caller (when run by a flow, the engine passes them to <code>data-on-error</code>).</p>
 <h4>Response handling</h4>
 <table>
 <tr><th>Response</th><th>Promise</th></tr>
+<tr><td>HTTP status not 2xx</td><td>Rejects with <code>Error("HTTP &lt;status&gt; &lt;statusText&gt;")</code>. The body is not read and no response hook is called.</td></tr>
 <tr><td><code>Content-Type</code> contains <code>text/html</code></td><td>Resolves with the response text (string).</td></tr>
-<tr><td>Otherwise parsed as JSON with <code>success</code> truthy</td><td>Resolves with the parsed object.</td></tr>
-<tr><td>JSON without <code>success</code></td><td>Rejects with <code>data.error</code> or <code>"[AviFlow.action.fetch] Error fetching data"</code>.</td></tr>
+<tr><td>Otherwise</td><td>Parsed as JSON and resolved with the parsed object.</td></tr>
 <tr><td>Network / parse error</td><td>Rejects with the original error.</td></tr>
 </table>
-<p>HTTP status codes are not checked; only the body is inspected.</p>

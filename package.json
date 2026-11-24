@@ -8,6 +8,9 @@
         "type": "git",
         "url": "https://github.com/aviato-soft/aviflow"
     },
+    "bugs": {
+        "url": "https://github.com/aviato-soft/aviflow/issues"
+    },
     "type": "module",
     "main": "dist/aviflow.cjs",
     "module": "dist/aviflow.esm.js",

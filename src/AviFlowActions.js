@@ -24,13 +24,27 @@ export class AviFlowActions {
    *
    * Optional hooks (action names resolved through `flow.resolveAction`), called as
    * `hook(payload, element, event, targetSelector, flow)`:
-   * - `onSucces`: JSON response with a truthy `success`   (payload = data)
-   * - `onFail`:   JSON response with a falsy `success`    (payload = data)
+   * - `onBefore`:   (`data-on-before`) before the request is sent  (payload = params)
+   * - `onResponse`: HTTP 2xx and body parsed (JSON or HTML string) (payload = data)
+   * - `onSuccess`:  JSON response with a truthy `success`          (payload = data)
+   * - `onFail`:     JSON response with a falsy `success`           (payload = data)
+   *
+   * Shortcut: `data-on="name"` stands for `data-on-before="name.before"`,
+   * `data-on-response="name.response"`, `data-on-success="name.success"` and
+   * `data-on-fail="name.fail"` (and `data-on-error="name.error"`, which is read by the engine,
+   * not by this action). An explicit `data-on-<hook>` attribute takes priority over the shortcut
+   * for that hook. Hook names that resolve to no action are skipped.
+   *
+   * `onBefore` runs first, synchronously, with the final request params (the same object used to
+   * build the query string / body), before the element's content and pending state are changed.
+   * If it throws, no request is sent and the error is thrown to the caller.
    *
    * Errors are not handled here: they are thrown to the caller. When run by a flow, the engine
    * passes them to the element's `data-on-error` hook (or logs them).
    *
-   * The element's pending state is on while the request runs.
+   * Before the request, the element's active content is switched to `pending`
+   * (`AviElement.setActiveContent(element, 'pending')`); this action does not switch it back.
+   * The element's pending state is on while the request runs and is always cleared afterwards.
    *
    * @param {HTMLElement} element The element containing the URL and request configuration.
    * @param {Event} event The DOM event that triggered the flow.
@@ -43,8 +57,11 @@ export class AviFlowActions {
 
     const dataset = AviElement.getDataset(element);
 
-    // Calls the hook named `name` (if any) with `payload` followed by the usual action arguments.
-    const callHook = (name, payload) => {
+    // Calls the hook `key` ('Before', 'Response', 'Success', 'Fail') with `payload` followed by the
+    // usual action arguments. The action name comes from `data-on-<key>`; when it is not set,
+    // the `data-on` shortcut applies: `data-on="a.b"` stands for `data-on-<key>="a.b.<key>"`.
+    const callHook = (key, payload) => {
+      const name = dataset[`on${key}`] || (dataset.on ? `${dataset.on}.${key.toLowerCase()}` : null);
       if (!name) return;
       const resolved = flow?.resolveAction(name);
       resolved?.fn.call(resolved.owner, payload, element, event, targetSelector, flow);
@@ -84,6 +101,8 @@ export class AviFlowActions {
       if (hasParams) body = JSON.stringify(params);
     }
 
+    callHook('Before', params);
+    AviElement.setActiveContent(element, 'pending');
     AviElement.togglePendingState(element, true);
 
     try {
@@ -99,10 +118,10 @@ export class AviFlowActions {
       const data = isHtml ? await response.text() : await response.json();
 
       // Transport level: HTTP 2xx and body parsed (JSON or HTML string)
-      if (data != null) callHook(dataset.onResponse, data);
+      if (data != null) callHook('Response', data);
 
       if (data && typeof data === 'object' && Object.hasOwn(data, 'success')) {
-        callHook(data.success ? dataset.onSuccess : dataset.onFail, data);
+        callHook(data.success ? 'Success' : 'Fail', data);
       }
 
       return data;

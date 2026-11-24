@@ -14,7 +14,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- for action fetch use data-on as a shortcut for data-on-[before | error | fail | response | success]- basic docs for AI agents
+- for action fetch if there is a child with data-content = pending => use it with setActiveContent together with togglePendingState
+- for action fetch introduce data-on-before
 - scorecard workflow
+- jsDelivr total downloads link on readme
+- bugs url
+- docs: link to npm: https://npmjs.com/package/aviflow
 
 ## [2.0.4] - 2026-11-12T10:03:12Z
 ### Added
