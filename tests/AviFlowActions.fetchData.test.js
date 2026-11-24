@@ -33,6 +33,7 @@ const AviElement = {
   getDataset: jest.fn(),
   getParams: jest.fn(),
   getParentChain: jest.fn((el) => [el]),
+  setActiveContent: jest.fn(),
   togglePendingState: jest.fn()
 };
 
@@ -78,6 +79,7 @@ describe('AviFlowActions / fetchData', () => {
   beforeEach(() => {
     AviElement.getDataset.mockReset();
     AviElement.getParams.mockReset();
+    AviElement.setActiveContent.mockReset();
     AviElement.togglePendingState.mockReset();
 
     global.fetch = jest.fn().mockResolvedValue(makeResponse());
@@ -137,6 +139,16 @@ describe('AviFlowActions / fetchData', () => {
 
       expect(AviElement.togglePendingState).toHaveBeenCalledTimes(1);
       expect(AviElement.togglePendingState).toHaveBeenCalledWith(element, true);
+    });
+
+
+    test('should set the active content to "pending" before fetch is called', async () => {
+      await fetchData(element);
+
+      expect(AviElement.setActiveContent).toHaveBeenCalledTimes(1);
+      expect(AviElement.setActiveContent).toHaveBeenCalledWith(element, 'pending');
+      expect(AviElement.setActiveContent.mock.invocationCallOrder[0])
+        .toBeLessThan(global.fetch.mock.invocationCallOrder[0]);
     });
 
 
@@ -759,6 +771,40 @@ describe('AviFlowActions / fetchData', () => {
   // Hooks: onSuccess / onFail
   // -------------------------------------------------------------------------
   describe('success and fail hooks', () => {
+
+    test('should call the onBefore hook with (params, element, event, target, flow) before fetch', async () => {
+      const params = { q: 'abc' };
+      const onBefore = jest.fn();
+      const flow = makeFlow({ before: onBefore });
+      const event = new Event('click');
+      setup({ dataset: { onBefore: 'before' }, params });
+
+      await fetchData(element, event, '#target', flow);
+
+      expect(flow.resolveAction).toHaveBeenCalledWith('before');
+      expect(onBefore).toHaveBeenCalledTimes(1);
+      expect(onBefore).toHaveBeenCalledWith(params, element, event, '#target', flow);
+      expect(onBefore.mock.invocationCallOrder[0]).toBeLessThan(global.fetch.mock.invocationCallOrder[0]);
+    });
+
+
+    test('should call the onResponse hook with (data, element, event, target, flow) before onSuccess', async () => {
+      const data = { success: true, id: 1 };
+      global.fetch.mockResolvedValue(makeResponse({ json: data }));
+      const onResponse = jest.fn();
+      const onDone = jest.fn();
+      const flow = makeFlow({ response: onResponse, done: onDone });
+      const event = new Event('click');
+      setup({ dataset: { onResponse: 'response', onSuccess: 'done' } });
+
+      await fetchData(element, event, '#target', flow);
+
+      expect(flow.resolveAction).toHaveBeenCalledWith('response');
+      expect(onResponse).toHaveBeenCalledTimes(1);
+      expect(onResponse).toHaveBeenCalledWith(data, element, event, '#target', flow);
+      expect(onResponse.mock.invocationCallOrder[0]).toBeLessThan(onDone.mock.invocationCallOrder[0]);
+    });
+
 
     test('should call the onSuccess hook with (data, element, event, target, flow)', async () => {
       const data = { success: true, id: 1 };

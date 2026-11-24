@@ -24,13 +24,21 @@ export class AviFlowActions {
    *
    * Optional hooks (action names resolved through `flow.resolveAction`), called as
    * `hook(payload, element, event, targetSelector, flow)`:
-   * - `onSucces`: JSON response with a truthy `success`   (payload = data)
-   * - `onFail`:   JSON response with a falsy `success`    (payload = data)
+   * - `onBefore`:   (`data-on-before`) before the request is sent  (payload = params)
+   * - `onResponse`: HTTP 2xx and body parsed (JSON or HTML string) (payload = data)
+   * - `onSuccess`:  JSON response with a truthy `success`          (payload = data)
+   * - `onFail`:     JSON response with a falsy `success`           (payload = data)
+   *
+   * `onBefore` runs first, synchronously, with the final request params (the same object used to
+   * build the query string / body), before the element's content and pending state are changed.
+   * If it throws, no request is sent and the error is thrown to the caller.
    *
    * Errors are not handled here: they are thrown to the caller. When run by a flow, the engine
    * passes them to the element's `data-on-error` hook (or logs them).
    *
-   * The element's pending state is on while the request runs.
+   * Before the request, the element's active content is switched to `pending`
+   * (`AviElement.setActiveContent(element, 'pending')`); this action does not switch it back.
+   * The element's pending state is on while the request runs and is always cleared afterwards.
    *
    * @param {HTMLElement} element The element containing the URL and request configuration.
    * @param {Event} event The DOM event that triggered the flow.
@@ -84,6 +92,10 @@ export class AviFlowActions {
       if (hasParams) body = JSON.stringify(params);
     }
 
+    if(dataset.onBefore) {
+      callHook(dataset.onBefore, params);
+    }
+    AviElement.setActiveContent(element, 'pending');
     AviElement.togglePendingState(element, true);
 
     try {
