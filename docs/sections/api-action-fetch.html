@@ -10,6 +10,7 @@
 <tr><td><code>data-param-*</code> + form fields</td><td>Parameters, via <code>AviFlow.tools.element.getParams</code>. Inherited through <code>data-parent</code>.</td></tr>
 <tr><td><code>data-opt-pending-*</code></td><td>Pending-state options, see <a href="#togglePendingState">togglePendingState</a>.</td></tr>
 <tr><td><code>data-on-before</code></td><td>Optional hook called before the request is sent, see <a href="#fetchHooks">Hooks</a>.</td></tr>
+<tr><td><code>data-on</code></td><td>Shortcut for all the hooks below, see <a href="#fetchHooks">Hooks</a>.</td></tr>
 <tr><td><code>data-on-response</code> / <code>data-on-success</code> / <code>data-on-fail</code></td><td>Optional hooks called after the response, see <a href="#fetchHooks">Hooks</a>.</td></tr>
 </table>
 <p><code>opt</code> is spread over the internal request options (<code>headers</code>, <code>method</code>, <code>params</code>, <code>url</code>, …), so it can override any of them.</p>
@@ -31,6 +32,16 @@
 <tr><td><code>data-on-success</code></td><td>JSON response with a truthy <code>success</code>.</td><td>The parsed response.</td></tr>
 <tr><td><code>data-on-fail</code></td><td>JSON response with a falsy <code>success</code>.</td><td>The parsed response.</td></tr>
 </table>
+<h5>Shortcut: <code>data-on</code></h5>
+<p><code>data-on="name"</code> is equivalent to setting every hook attribute to <code>name</code> followed by the hook:</p>
+<pre><code>data-on="trigger.on"
+&lt;!-- same as --&gt;
+data-on-before="trigger.on.before"
+data-on-error="trigger.on.error"
+data-on-fail="trigger.on.fail"
+data-on-response="trigger.on.response"
+data-on-success="trigger.on.success"</code></pre>
+<p>An explicit <code>data-on-*</code> attribute takes priority over the shortcut for that hook. A derived name that matches no registered action is skipped. <code>data-on-error</code> is read by the flow engine, not by this action.</p>
 <p>If <code>data-on-before</code> throws, no request is sent and the error is thrown to the caller. Request errors are not handled by this action: they are thrown to the caller (when run by a flow, the engine passes them to <code>data-on-error</code>).</p>
 <h4>Response handling</h4>
 <table>

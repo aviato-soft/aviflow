@@ -7,7 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [WIP]
 ### Added
-- for action fetch use data-on as a shortcut for data-on-[before | error | fail | response | success]
 ### Changed
 ### Fixed
 ### Removed
@@ -15,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- basic docs for AI agents
+- for action fetch use data-on as a shortcut for data-on-[before | error | fail | response | success]- basic docs for AI agents
 - for action fetch if there is a child with data-content = pending => use it with setActiveContent together with togglePendingState
 - for action fetch introduce data-on-before
 - scorecard workflow

@@ -806,6 +806,64 @@ describe('AviFlowActions / fetchData', () => {
     });
 
 
+    test('should derive the before, response and success hooks from data-on', async () => {
+      const data = { success: true };
+      global.fetch.mockResolvedValue(makeResponse({ json: data }));
+      const params = { q: 1 };
+      const handlers = { 'x.before': jest.fn(), 'x.response': jest.fn(), 'x.success': jest.fn(), 'x.fail': jest.fn() };
+      const flow = makeFlow(handlers);
+      const event = new Event('click');
+      setup({ dataset: { on: 'x' }, params });
+
+      await fetchData(element, event, '#t', flow);
+
+      expect(handlers['x.before']).toHaveBeenCalledWith(params, element, event, '#t', flow);
+      expect(handlers['x.response']).toHaveBeenCalledWith(data, element, event, '#t', flow);
+      expect(handlers['x.success']).toHaveBeenCalledWith(data, element, event, '#t', flow);
+      expect(handlers['x.fail']).not.toHaveBeenCalled();
+    });
+
+
+    test('should derive the fail hook from data-on when success is falsy', async () => {
+      const data = { success: false };
+      global.fetch.mockResolvedValue(makeResponse({ json: data }));
+      const handlers = { 'x.success': jest.fn(), 'x.fail': jest.fn() };
+      const flow = makeFlow(handlers);
+      setup({ dataset: { on: 'x' } });
+
+      await fetchData(element, null, '#t', flow);
+
+      expect(handlers['x.fail']).toHaveBeenCalledWith(data, element, null, '#t', flow);
+      expect(handlers['x.success']).not.toHaveBeenCalled();
+    });
+
+
+    test('should give an explicit data-on-<hook> attribute priority over data-on', async () => {
+      global.fetch.mockResolvedValue(makeResponse({ json: { success: true } }));
+      const handlers = { 'x.success': jest.fn(), custom: jest.fn(), 'x.response': jest.fn() };
+      const flow = makeFlow(handlers);
+      setup({ dataset: { on: 'x', onSuccess: 'custom' } });
+
+      await fetchData(element, null, '#t', flow);
+
+      expect(handlers.custom).toHaveBeenCalledTimes(1);
+      expect(handlers['x.success']).not.toHaveBeenCalled();
+      expect(handlers['x.response']).toHaveBeenCalledTimes(1);
+    });
+
+
+    test('should resolve normally when the actions derived from data-on are not registered', async () => {
+      const data = { success: true };
+      global.fetch.mockResolvedValue(makeResponse({ json: data }));
+      const flow = makeFlow();
+      setup({ dataset: { on: 'missing' } });
+
+      await expect(fetchData(element, null, '#t', flow)).resolves.toBe(data);
+      expect(flow.resolveAction).toHaveBeenCalledWith('missing.before');
+      expect(flow.resolveAction).toHaveBeenCalledWith('missing.success');
+    });
+
+
     test('should call the onSuccess hook with (data, element, event, target, flow)', async () => {
       const data = { success: true, id: 1 };
       global.fetch.mockResolvedValue(makeResponse({ json: data }));
