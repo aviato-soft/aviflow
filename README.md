@@ -389,7 +389,8 @@ Issues and pull requests are welcome. Please keep changes focused and include an
 
 ## Status
 
-[![jsdeliver](https://data.jsdelivr.com/v1/package/npm/aviflow/badge)](https://www.jsdelivr.com/package/npm/aviflow) [![npm version](https://img.shields.io/npm/v/aviflow?logo=npm&logoColor=fff)](https://www.npmjs.com/package/aviflow) ![Codecov](https://img.shields.io/codecov/c/github/aviato-soft/aviflow)
+[![jsdeliver](https://data.jsdelivr.com/v1/package/npm/aviflow/badge)](https://www.jsdelivr.com/package/npm/aviflow) [![npm version](https://img.shields.io/npm/v/aviflow?logo=npm&logoColor=fff)](https://www.npmjs.com/package/aviflow) ![npm total downloads](https://badgen.net/npm/dt/aviflow) 
+![Codecov](https://img.shields.io/codecov/c/github/aviato-soft/aviflow) ![dependencies](https://img.shields.io/badge/dependencies-0-brightgreen")
 
 
 
